@@ -25,6 +25,8 @@
             buildInputs = [
               (haskellPackages.ghcWithPackages (ps: with ps; [
                 pandoc
+                uuid
+                utf8-string
               ]))
               poetry
               ((poetry2nix.mkPoetryApplication poetryAttrsSet).dependencyEnv)
