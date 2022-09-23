@@ -12,6 +12,7 @@ import Data.Foldable (find)
 import Data.Function ((&))
 import qualified Data.Map as M
 import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
+import qualified Data.Maybe as UUID
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.UUID as UUID
@@ -29,24 +30,6 @@ nameMap =
     , ("example", "Example")
     , ("remark", "Remark")
     ]
-
-pickClass :: Dict -> [Text] -> Text
-pickClass nameMap = fromMaybe (error "no such class") . find (`M.member` nameMap)
-
-renderClassName :: Dict -> [Text] -> Text
-renderClassName nameMap = head . mapMaybe (`M.lookup` nameMap)
-
-pickPara (Para x) = x
-pickPara _ = error "not a paragraph"
-
-transformTheorem nameMap (Div attr blocks)
-  | let (_, cls, _) = attr in any (`M.member` nameMap) cls =
-    let theoremName = head blocks
-        theoremContent = tail blocks
-        (id, cls, dict) = attr
-        theoremKind = pickClass nameMap cls
-     in Div (id, cls ++ ["theorem-mark"], dict) [Div ("", ["theorem-name"], [("theorem-type", theoremKind)]) [theoremName], Div ("", ["theorem-content"], []) theoremContent]
-transformTheorem _ x = x
 
 data Theorem = Theorem
   { attr :: Attr
@@ -83,30 +66,30 @@ renderFilter nameMap x =
   fromMaybe x (pickTheorem nameMap x >>= Just . renderTheorem nameMap)
 
 data Anki = Anki
-  { guid :: UUID.UUID
+  { guid :: Text
   , tags :: [Text]
   , question :: Text
   , answer :: Text
   }
 
 instance A.ToJSON Anki where
-  toJSON (Anki guid tags question answer) =
-    A.object ["guid" .= guid, "tags" .= tags, "question" .= question, "answer" .= answer]
+  toJSON (Anki guid tags question answer) = A.object ["guid" .= guid, "tags" .= tags, "question" .= question, "answer" .= answer]
 
-theoremToAnkiNote :: Dict -> Meta -> Theorem -> Anki
-theoremToAnkiNote nameMap m t =
+theoremToAnkiNote :: Dict -> Theorem -> Anki
+theoremToAnkiNote nameMap t =
   let Div (did, cls, dict) [theoremHead, theoremContent] = renderTheorem nameMap t
       theoremKind' = theoremKind t
-      tags = maybe [] (T.words . snd) (find (\(x, y) -> "tags" == x) dict) :: [Text]
-      question = fromRight (error "fail rendering question") (runPure $ writeHtml5String def (Pandoc m [theoremHead]))
-      answer = fromRight (error "fail rendering question") (runPure $ writeHtml5String def (Pandoc m [theoremContent]))
-      guid = UUID.generateNamed UUID.namespaceOID (U8.encode (T.unpack question))
+      dict' = M.fromList dict
+      tags = maybe [] T.words ("tags" `M.lookup` dict') :: [Text]
+      question = fromRight (error "fail rendering question") (runPure $ writeHtml5String def (Pandoc (Meta M.empty) [theoremHead]))
+      answer = fromRight (error "fail rendering question") (runPure $ writeHtml5String def (Pandoc (Meta M.empty) [theoremContent]))
+      guid =
+        fromMaybe
+          (UUID.toText $ UUID.generateNamed UUID.namespaceOID (U8.encode (T.unpack question)))
+          ("guid" `M.lookup` dict')
    in Anki guid tags question answer
 
-pandocToAnkiNotes :: Dict -> Pandoc -> [Anki]
-pandocToAnkiNotes nameMap (Pandoc m bs) =
-  bs
-    & mapMaybe (pickTheorem nameMap)
-    & map (theoremToAnkiNote nameMap m)
+pandocToAnkiNotes :: Dict -> [Block] -> [Anki]
+pandocToAnkiNotes nameMap = map (theoremToAnkiNote nameMap) . mapMaybe (pickTheorem nameMap)
 
 pandocToAnkiNotesString nameMap = A.encode . pandocToAnkiNotes nameMap
