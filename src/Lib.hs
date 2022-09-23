@@ -82,7 +82,7 @@ theoremToAnkiNote nameMap t =
       dict' = M.fromList dict
       tags = maybe [] T.words ("tags" `M.lookup` dict') :: [Text]
       question = fromRight (error "fail rendering question") (runPure $ writeHtml5String def (Pandoc (Meta M.empty) [theoremHead]))
-      answer = fromRight (error "fail rendering question") (runPure $ writeHtml5String def (Pandoc (Meta M.empty) [theoremContent]))
+      answer = fromRight (error "fail rendering answer") (runPure $ writeHtml5String def (Pandoc (Meta M.empty) [theoremContent]))
       guid =
         fromMaybe
           (UUID.toText $ UUID.generateNamed UUID.namespaceOID (U8.encode (T.unpack question)))
