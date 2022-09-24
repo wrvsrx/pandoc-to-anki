@@ -8,4 +8,4 @@ import Text.Pandoc
 main = do
   cnt <- T.getContents
   let Pandoc m bs = fromRight (error "can't parse json") (runPure (readJSON def cnt))
-  B.putStrLn (pandocToAnkiNotesString nameMap bs)
+  B.putStrLn (pandocToAnkiNotesJSON nameMap bs)

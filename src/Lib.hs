@@ -92,4 +92,4 @@ theoremToAnkiNote nameMap t =
 pandocToAnkiNotes :: Dict -> [Block] -> [Anki]
 pandocToAnkiNotes nameMap = map (theoremToAnkiNote nameMap) . mapMaybe (pickTheorem nameMap)
 
-pandocToAnkiNotesString nameMap = A.encode . pandocToAnkiNotes nameMap
+pandocToAnkiNotesJSON nameMap = A.encode . pandocToAnkiNotes nameMap
