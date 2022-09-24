@@ -27,6 +27,7 @@
                 pandoc
                 uuid
                 utf8-string
+                optparse-applicative
               ]))
               poetry
               ((poetry2nix.mkPoetryApplication poetryAttrsSet).dependencyEnv)
