@@ -188,14 +188,19 @@ attachGUIDToTheorem nameMap x = fromMaybe x $ do
   let a = theoremToAnkiNote nameMap t
   if isNothing ((snd . pickAnkiTagsAndGuid) dict) then Just (Div (did, cls, dict <> [("guid", guid a)]) bs) else Nothing
 
+rawTexToRawMarkdown :: Block -> Block
+rawTexToRawMarkdown (RawBlock "tex" x) = RawBlock "markdown" x
+rawTexToRawMarkdown x = x
+
 attachDeckIdToMeta :: Meta -> Meta
 attachDeckIdToMeta (Meta m) =
   let (_, did) = pickDeckTitleFromMeta m
       metaWithDeckId = M.insert "deck-id" ((MetaString . T.pack . show) did) m
    in Meta metaWithDeckId
 
+-- FIXME: think a method to avoid convert all raw tex blocks to markdown
 pandocToAstWithGUIDJSON :: Dict -> Pandoc -> B.ByteString
-pandocToAstWithGUIDJSON nameMap = T.encodeUtf8 . fromRight (error "fail to convert to json") . runPure . writeJSON def . (\(Pandoc m bs) -> Pandoc (attachDeckIdToMeta m) (map (attachGUIDToTheorem nameMap) bs))
+pandocToAstWithGUIDJSON nameMap = T.encodeUtf8 . fromRight (error "fail to convert to json") . runPure . writeJSON def . (\(Pandoc m bs) -> Pandoc (attachDeckIdToMeta m) (map (rawTexToRawMarkdown . attachGUIDToTheorem nameMap) bs))
 
 pandocToAnkiNotesJSON nameMap = BL.toStrict . A.encode . pandocToAnkiDeck nameMap
 
