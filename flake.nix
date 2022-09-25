@@ -19,19 +19,30 @@
           });
           preferWheels = true;
         };
-      in
-        {
-          devShell = mkShell {
-            buildInputs = [
-              (haskellPackages.ghcWithPackages (ps: with ps; [
-                pandoc
-                uuid
-                utf8-string
-                optparse-applicative
-              ]))
-              poetry
-              ((poetry2nix.mkPoetryApplication poetryAttrsSet).dependencyEnv)
-            ];
+      in rec {
+        packages.default = stdenv.mkDerivation rec {
+          name = "markdown_to_anki";
+          src = ./.;
+          buildInputs = [
+            (haskellPackages.ghcWithPackages (ps: with ps; [
+              pandoc
+              uuid
+              utf8-string
+              optparse-applicative
+            ]))
+            poetry
+            ((poetry2nix.mkPoetryApplication poetryAttrsSet).dependencyEnv)
+          ];
+          buildPhase = ''
+            env --chdir=src ghc Main
+          '';
+          installPhase = ''
+            mkdir -p $out/bin
+            install -m755 src/Main $out/bin/${name}
+          '';
+        };
+        devShell = mkShell {
+          inputsFrom = [ packages.default ];
         };
       }
   );
