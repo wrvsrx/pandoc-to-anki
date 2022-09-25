@@ -33,7 +33,7 @@
               utf8-string
             ]))
             poetry
-            ((poetry2nix.mkPoetryApplication poetryAttrsSet).dependencyEnv)
+            (poetry2nix.mkPoetryEnv poetryAttrsSet)
           ];
           buildPhase = ''
             env --chdir=src ghc Main
