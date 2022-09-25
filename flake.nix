@@ -29,6 +29,8 @@
               uuid
               utf8-string
               optparse-applicative
+              cryptohash-sha256
+              utf8-string
             ]))
             poetry
             ((poetry2nix.mkPoetryApplication poetryAttrsSet).dependencyEnv)
