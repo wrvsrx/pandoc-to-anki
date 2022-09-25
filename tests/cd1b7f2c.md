@@ -1,5 +1,6 @@
 ---
 title: projective dynamic
+anki-deck-title: Project Dynamic
 tags: [inbox, simulation]
 ---
 
