@@ -4,7 +4,9 @@ anki-deck-title: Project Dynamic
 tags: [inbox, simulation]
 ---
 
+```{=tex}
 \newcommand{\dt}{\Delta t}
+```
 
 ::: {.remark}
 隐式积分 $x_{n + 1} = x_{n} + v_{n + 1} \dt$ 在匀加速时产生的误差
