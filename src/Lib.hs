@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Lib (
@@ -86,15 +87,21 @@ data Anki = Anki
 instance A.ToJSON Anki where
   toJSON (Anki guid tags question answer) = A.object ["guid" .= guid, "tags" .= tags, "question" .= question, "answer" .= answer]
 
+data AnkiDeck = AnkiDeck
+  { deckTitle :: Text
+  }
+
+
 blocksToText x = fromRight (error "fail render block") (runPure $ writeHtml5String def (Pandoc (Meta M.empty) x))
 
 theoremToAnkiNote :: Dict -> Theorem -> Anki
 theoremToAnkiNote nameMap t =
   let Div (did, cls, dict) [theoremHead, theoremContent] = renderTheorem nameMap t
       theoremKind' = theoremKind t
+      theoremKindTag = fromMaybe (error "no such theorem type") (theoremKind' `M.lookup` nameMap)
       [question, answer] = map blocksToText [[theoremHead], [theoremContent]]
       (tags, guid) = computeAnkiTagsAndGuid dict question
-   in Anki guid tags question answer
+   in Anki guid (theoremKindTag : tags) question answer
 
 pickAnkiTagsAndGuid :: [(Text, Text)] -> ([Text], Maybe Text)
 pickAnkiTagsAndGuid dict =
@@ -111,8 +118,16 @@ computeAnkiTagsAndGuid dict question =
       guid = fromMaybe (computeGuid question) guidMaybe
    in (tags, guid)
 
-pandocToAnkiNotes :: Dict -> [Block] -> [Anki]
-pandocToAnkiNotes nameMap = map (theoremToAnkiNote nameMap) . mapMaybe (pickTheorem nameMap)
+blocksToAnkiNotes :: Dict -> [Block] -> [Anki]
+blocksToAnkiNotes nameMap = map (theoremToAnkiNote nameMap) . mapMaybe (pickTheorem nameMap)
+
+-- pandocToAnkiNotes nameMap (Pandoc (Meta m) bs) =
+--   let globalTags = fromMaybe [] $ do
+--         a <- "anki-tags" `M.lookup` m
+--         ms <- case a of MetaList m -> Just m; _ -> Nothing
+--         Just $ map (\case MetaString s -> if ' ' `T.elem` s then error "no space are allowed in tag" else s; _ -> error "only allow string") ms
+--       ankiNotes = map (\anki -> anki { tags = tags anki <> globalTags}) (blocksToAnkiNotes nameMap bs)
+   -- in M.fromList 
 
 pickDiv :: Block -> Maybe (Attr, [Block])
 pickDiv (Div attr bs) = Just (attr, bs)
@@ -141,7 +156,9 @@ attachGUIDToTheorem nameMap x = fromMaybe x $ do
 pandocToAstWithGUIDJSON :: Dict -> Pandoc -> B.ByteString
 pandocToAstWithGUIDJSON nameMap = T.encodeUtf8 . fromRight (error "fail to convert to json") . runPure . writeJSON def . topDown (attachGUIDToTheorem nameMap)
 
-pandocToAnkiNotesJSON nameMap (Pandoc m bs) = (BL.toStrict . A.encode . pandocToAnkiNotes nameMap) bs
+pandocToAnkiNotesJSON nameMap (Pandoc m bs) = (BL.toStrict . A.encode . blocksToAnkiNotes nameMap) bs
 
 pandocToRenderedAstJSON :: Dict -> Pandoc -> B.ByteString
 pandocToRenderedAstJSON nameMap = T.encodeUtf8 . fromRight (error "fail to convert to json") . runPure . writeJSON def . topDown (renderFilter nameMap)
+
+-- TODO: global tag, To Tag
