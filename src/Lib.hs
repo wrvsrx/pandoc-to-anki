@@ -23,7 +23,6 @@ import qualified Data.ByteString.UTF8 as BU
 import Data.Either (fromRight)
 import Data.Foldable (find)
 import Data.Function ((&))
-import qualified Debug.Trace as Tr
 import Data.Functor ((<&>))
 import qualified Data.Map as M
 import Data.Maybe (catMaybes, fromMaybe, isNothing, mapMaybe)
@@ -33,6 +32,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.UUID as UUID
 import qualified Data.UUID.V5 as UUID
+import qualified Debug.Trace as Tr
 import Text.Pandoc
 import qualified Text.Pandoc as M
 import Text.Pandoc.Generic (bottomUp)
@@ -101,7 +101,7 @@ data AnkiDeck = AnkiDeck
 
 instance A.ToJSON AnkiDeck where toJSON (AnkiDeck t i n) = A.object ["deckTitle" .= t, "deckId" .= i, "notes" .= n]
 
-blocksToText x = fromRight (error "fail render block") (runPure $ writeHtml5String def (Pandoc (Meta M.empty) x))
+blocksToText x = fromRight (error "fail render block") (runPure $ writeHtml5String (def{writerHTMLMathMethod = MathJax defaultMathJaxURL}) (Pandoc (Meta M.empty) x))
 
 theoremToAnkiNote :: Dict -> Theorem -> Anki
 theoremToAnkiNote nameMap t =
