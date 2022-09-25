@@ -22,5 +22,14 @@ my_model = genanki.Model(
 )
 
 data = json.load(sys.stdin)
-for note in data:
-    pass
+deck = genanki.Deck(deck_id=int(data["deckId"]), name=data["deckTitle"])
+for note_data in data["notes"]:
+    note = genanki.Note(
+        model=my_model,
+        fields=[note_data["question"], note_data["answer"]],
+        guid=note_data["guid"],
+    )
+    print(note)
+    deck.add_note(note)
+
+genanki.Package(deck).write_to_file("test.apkg")
