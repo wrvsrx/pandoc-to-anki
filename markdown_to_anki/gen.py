@@ -1,4 +1,5 @@
-import pandoc
+import json
+import sys
 import genanki
 
 model_id = 1245741901
@@ -19,3 +20,7 @@ my_model = genanki.Model(
         },
     ],
 )
+
+data = json.load(sys.stdin)
+for note in data:
+    pass
