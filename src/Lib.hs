@@ -7,18 +7,23 @@ module Lib (
   pandocToAnkiNotesJSON,
   pandocToAstWithGUIDJSON,
   pandocToRenderedAstJSON,
+  hashToInt32,
 ) where
 
 import Codec.Binary.UTF8.String as U8
 import Control.Exception (assert)
+import Crypto.Hash.SHA256 (hash)
 import Data.Aeson ((.=))
 import qualified Data.Aeson as A
 import Data.Bifunctor (Bifunctor (first))
+import Data.Bits (shift)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.UTF8 as BU
 import Data.Either (fromRight)
 import Data.Foldable (find)
 import Data.Function ((&))
+import qualified Debug.Trace as Tr
 import Data.Functor ((<&>))
 import qualified Data.Map as M
 import Data.Maybe (catMaybes, fromMaybe, isNothing, mapMaybe)
@@ -32,6 +37,7 @@ import Text.Pandoc
 import qualified Text.Pandoc as M
 import Text.Pandoc.Generic (bottomUp)
 import Text.Pandoc.JSON
+import Text.Pandoc.Shared (stringify)
 
 type Dict = M.Map Text Text
 
@@ -89,8 +95,11 @@ instance A.ToJSON Anki where
 
 data AnkiDeck = AnkiDeck
   { deckTitle :: Text
+  , deckId :: Int
+  , notes :: [Anki]
   }
 
+instance A.ToJSON AnkiDeck where toJSON (AnkiDeck t i n) = A.object ["deckTitle" .= t, "deckId" .= i, "notes" .= n]
 
 blocksToText x = fromRight (error "fail render block") (runPure $ writeHtml5String def (Pandoc (Meta M.empty) x))
 
@@ -121,13 +130,39 @@ computeAnkiTagsAndGuid dict question =
 blocksToAnkiNotes :: Dict -> [Block] -> [Anki]
 blocksToAnkiNotes nameMap = map (theoremToAnkiNote nameMap) . mapMaybe (pickTheorem nameMap)
 
--- pandocToAnkiNotes nameMap (Pandoc (Meta m) bs) =
---   let globalTags = fromMaybe [] $ do
---         a <- "anki-tags" `M.lookup` m
---         ms <- case a of MetaList m -> Just m; _ -> Nothing
---         Just $ map (\case MetaString s -> if ' ' `T.elem` s then error "no space are allowed in tag" else s; _ -> error "only allow string") ms
---       ankiNotes = map (\anki -> anki { tags = tags anki <> globalTags}) (blocksToAnkiNotes nameMap bs)
-   -- in M.fromList 
+metaInlinesToText :: [Inline] -> Text
+metaInlinesToText = T.concat . map stringify
+
+hashToInt32 :: Text -> Int
+hashToInt32 = flip shift (-1) . foldl (\x y -> shift x 8 + (fromIntegral y :: Int)) 0 . B.unpack . B.take 4 . hash . BU.fromString . T.unpack
+
+pickDeckTitleFromMeta :: M.Map Text MetaValue -> (Text, Int)
+pickDeckTitleFromMeta m =
+  let deckTitleMeta = take "anki-deck-title"
+      docTitleMeta = take "title"
+      deckTitle = case deckTitleMeta of
+        Just x -> x
+        Nothing -> case docTitleMeta of
+          Just x -> x
+          Nothing -> error "there's no deck title"
+      deckUUID = maybe (hashToInt32 deckTitle) (read . T.unpack :: Text -> Int) (take "deck-id")
+   in (deckTitle, deckUUID)
+ where
+  take key = do
+    val <- key `M.lookup` m
+    Just $ metaInlinesToText $ ensureMetaInlines val
+
+ensureMetaInlines = \case (MetaInlines x) -> x; _ -> error "val must be a MetaInlines"
+
+pandocToAnkiDeck nameMap (Pandoc (Meta m) bs) =
+  let globalTags = fromMaybe [] $ do
+        a <- "anki-tags" `M.lookup` m
+        ms <- case a of MetaList m -> Just m; _ -> Nothing
+        Just $ map ((\s -> if ' ' `T.elem` s then error "no space are allowed in tag" else s) . metaInlinesToText . ensureMetaInlines) ms
+      (deckTitle, deckUUID) = pickDeckTitleFromMeta m
+      ankiNotes = map (\anki -> anki{tags = tags anki <> globalTags}) (blocksToAnkiNotes nameMap bs)
+      ankiDeck = AnkiDeck deckTitle deckUUID ankiNotes
+   in ankiDeck
 
 pickDiv :: Block -> Maybe (Attr, [Block])
 pickDiv (Div attr bs) = Just (attr, bs)
@@ -153,12 +188,16 @@ attachGUIDToTheorem nameMap x = fromMaybe x $ do
   let a = theoremToAnkiNote nameMap t
   if isNothing ((snd . pickAnkiTagsAndGuid) dict) then Just (Div (did, cls, dict <> [("guid", guid a)]) bs) else Nothing
 
-pandocToAstWithGUIDJSON :: Dict -> Pandoc -> B.ByteString
-pandocToAstWithGUIDJSON nameMap = T.encodeUtf8 . fromRight (error "fail to convert to json") . runPure . writeJSON def . topDown (attachGUIDToTheorem nameMap)
+attachDeckIdToMeta :: Meta -> Meta
+attachDeckIdToMeta (Meta m) =
+  let (_, did) = pickDeckTitleFromMeta m
+      metaWithDeckId = M.insert "deck-id" ((MetaString . T.pack . show) did) m
+   in Meta metaWithDeckId
 
-pandocToAnkiNotesJSON nameMap (Pandoc m bs) = (BL.toStrict . A.encode . blocksToAnkiNotes nameMap) bs
+pandocToAstWithGUIDJSON :: Dict -> Pandoc -> B.ByteString
+pandocToAstWithGUIDJSON nameMap = T.encodeUtf8 . fromRight (error "fail to convert to json") . runPure . writeJSON def . (\(Pandoc m bs) -> Pandoc (attachDeckIdToMeta m) (map (attachGUIDToTheorem nameMap) bs))
+
+pandocToAnkiNotesJSON nameMap = BL.toStrict . A.encode . pandocToAnkiDeck nameMap
 
 pandocToRenderedAstJSON :: Dict -> Pandoc -> B.ByteString
 pandocToRenderedAstJSON nameMap = T.encodeUtf8 . fromRight (error "fail to convert to json") . runPure . writeJSON def . topDown (renderFilter nameMap)
-
--- TODO: global tag, To Tag
