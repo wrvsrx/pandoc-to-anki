@@ -27,3 +27,6 @@ cabal.project.local~
 
 # nix
 result
+
+# build
+/src/Main
