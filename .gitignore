@@ -30,3 +30,5 @@ result
 
 # build
 /src/Main
+
+/.direnv
