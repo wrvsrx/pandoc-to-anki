@@ -12,6 +12,9 @@
         poetryAttrsSet = {
           projectDir = ./.;
           overrides = pkgs.poetry2nix.overrides.withDefaults (final: prev: {
+            pandoc = prev.pandoc.overrideAttrs (old: {
+              nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ prev.setuptools ];
+            });
             genanki = prev.genanki.overrideAttrs (old: {
               nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ prev.pytest-runner ];
             });
@@ -28,6 +31,10 @@
         };
         devShells.default = pkgs.mkShell {
           inputsFrom = [ packages.markdown-to-anki ];
+          buildInputs = with pkgs; [
+            poetry
+            (poetry2nix.mkPoetryEnv poetryAttrsSet)
+          ];
         };
       };
   }
