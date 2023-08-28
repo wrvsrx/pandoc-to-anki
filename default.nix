@@ -1,25 +1,17 @@
-{ stdenvNoCC
-, haskellPackages
+{ mkDerivation, aeson, base, bytestring, containers
+, cryptohash-sha256, lib, optparse-applicative, pandoc
+, pandoc-types, text, utf8-string, uuid
 }:
-stdenvNoCC.mkDerivation rec {
-  name = "markdown-to-anki";
-  src = ./src;
-  buildInputs = [
-    (haskellPackages.ghcWithPackages (ps: with ps; [
-      pandoc
-      uuid
-      utf8-string
-      optparse-applicative
-      cryptohash-sha256
-      utf8-string
-    ]))
+mkDerivation {
+  pname = "markdown-to-anki";
+  version = "0.1.0.0";
+  src = ./.;
+  isLibrary = false;
+  isExecutable = true;
+  executableHaskellDepends = [
+    aeson base bytestring containers cryptohash-sha256
+    optparse-applicative pandoc pandoc-types text utf8-string uuid
   ];
-  buildPhase = ''
-    ghc Main
-  '';
-  installPhase = ''
-    mkdir -p $out/bin
-    install -m755 Main $out/bin/${name}
-  '';
+  license = lib.licenses.mit;
+  mainProgram = "markdown-to-anki";
 }
-

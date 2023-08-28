@@ -22,20 +22,13 @@
           preferWheels = true;
         };
       in
-
       rec {
         packages = rec {
           markdown-to-anki-python = inputs.poetry2nix.mkPoetryApplication poetryAttrsSet;
-          markdown-to-anki = pkgs.callPackage ./default.nix { };
+          markdown-to-anki = pkgs.haskellPackages.callPackage ./default.nix { };
           default = markdown-to-anki;
         };
-        devShells.default = pkgs.mkShell {
-          inputsFrom = [ packages.markdown-to-anki ];
-          buildInputs = with pkgs; [
-            poetry
-            (poetry2nix.mkPoetryEnv poetryAttrsSet)
-          ];
-        };
+        devShells.default = pkgs.callPackage ./shell.nix { inherit (packages) markdown-to-anki; };
       };
   }
   );
