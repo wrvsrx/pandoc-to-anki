@@ -15,28 +15,19 @@ import Control.Exception (assert)
 import Crypto.Hash.SHA256 (hash)
 import Data.Aeson ((.=))
 import qualified Data.Aeson as A
-import Data.Bifunctor (Bifunctor (first))
 import Data.Bits (shift)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.UTF8 as BU
 import Data.Either (fromRight)
-import Data.Foldable (find)
-import Data.Function ((&))
-import Data.Functor ((<&>))
 import qualified Data.Map as M
-import Data.Maybe (catMaybes, fromMaybe, isNothing, mapMaybe)
-import qualified Data.Maybe as UUID
+import Data.Maybe (fromMaybe, isNothing, mapMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.UUID as UUID
 import qualified Data.UUID.V5 as UUID
-import qualified Debug.Trace as Tr
 import Text.Pandoc
-import qualified Text.Pandoc as M
-import Text.Pandoc.Generic (bottomUp)
-import Text.Pandoc.JSON
 import Text.Pandoc.Shared (stringify)
 
 type Dict = M.Map Text Text

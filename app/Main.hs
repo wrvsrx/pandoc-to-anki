@@ -16,14 +16,7 @@ optToFunc ToAnki = pandocToAnkiNotesJSON
 optToFunc ToRenderedAst = pandocToRenderedAstJSON
 optToFunc ToAstWithGUID = pandocToAstWithGUIDJSON
 
-toAnkiOpt = flag' ToAnki (long "anki" <> short 'a' <> help "render pandoc ast to anki json")
-
-toRenderedJSONOpt = flag' ToRenderedAst (long "rendered" <> short 'r' <> help "render theorems in pandoc ast")
-
-toAstWithGUID = flag' ToAstWithGUID (long "guid" <> short 'g' <> help "attach theorems in pandoc ast with guid")
-
-optParser = toAnkiOpt <|> toRenderedJSONOpt <|> toAstWithGUID
-
+main :: IO ()
 main = do
   opt <- execParser optParserWithHelp
   cnt <- T.getContents
@@ -35,3 +28,7 @@ main = do
     info
       (optParser <**> helper)
       fullDesc
+  optParser =
+    flag' ToAnki (long "anki" <> short 'a' <> help "render pandoc ast to anki json")
+      <|> flag' ToRenderedAst (long "rendered" <> short 'r' <> help "render theorems in pandoc ast")
+      <|> flag' ToAstWithGUID (long "guid" <> short 'g' <> help "attach theorems in pandoc ast with guid")
