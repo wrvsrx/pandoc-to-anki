@@ -18,17 +18,16 @@ optToFunc ToAstWithGUID = pandocToAstWithGUIDJSON
 
 main :: IO ()
 main = do
-  opt <- execParser optParserWithHelp
+  opt <- optParserIO
   cnt <- T.getContents
   let p = fromRight (error "can't parse json") (runPure (readJSON def cnt))
       out = optToFunc opt nameMap p
   B.putStrLn out
  where
-  optParserWithHelp =
-    info
-      (optParser <**> helper)
-      fullDesc
+  optParserIO = customExecParser (prefs showHelpOnEmpty) (info optParser idm)
   optParser =
-    flag' ToAnki (long "anki" <> short 'a' <> help "render pandoc ast to anki json")
-      <|> flag' ToRenderedAst (long "rendered" <> short 'r' <> help "render theorems in pandoc ast")
-      <|> flag' ToAstWithGUID (long "guid" <> short 'g' <> help "attach theorems in pandoc ast with guid")
+    hsubparser
+      ( command "lock" (info (pure ToAstWithGUID) idm)
+          <> command "anki" (info (pure ToAnki) idm)
+          <> command "render" (info (pure ToRenderedAst) idm)
+      )
