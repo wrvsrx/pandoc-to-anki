@@ -63,7 +63,9 @@ executable markdown-to-anki
   main-is:          Main.hs
 
   -- Modules included in this executable, other than Main.
-  other-modules:    Lib
+  other-modules:
+    Anki
+    Lib
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
@@ -72,12 +74,15 @@ executable markdown-to-anki
   build-depends:
     , aeson
     , base                  ^>=4.16.4.0
+    , blaze-html
     , bytestring
     , containers
     , cryptohash-sha256
+    , data-default
     , optparse-applicative
     , pandoc
     , pandoc-types
+    , req
     , text
     , utf8-string
     , uuid
