@@ -1,14 +1,14 @@
-{ mkShell
-, cabal2nix
+{ cabal2nix
 , cabal-install
 , haskellPackages
-, markdown-to-anki
 }:
-mkShell {
-  inputsFrom = [ markdown-to-anki.env ];
-  buildInputs = [
-    # poetry
-    # (poetry2nix.mkPoetryEnv poetryAttrsSet)
+haskellPackages.shellFor
+{
+  packages = ps: [
+    (ps.callPackage ./default.nix { })
+    ps.shake
+  ];
+  nativeBuildInputs = [
     cabal2nix
     cabal-install
     haskellPackages.cabal-fmt

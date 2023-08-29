@@ -1,0 +1,11 @@
+cradle:
+  multi:
+    - path: "./app"
+      config:
+        cradle:
+          cabal:
+    - path: "./scripts"
+      config:
+        cradle:
+          direct: 
+            arguments: []
