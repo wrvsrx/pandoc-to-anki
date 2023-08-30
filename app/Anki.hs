@@ -13,14 +13,14 @@ module Anki (
   AnkiConnectAddress (..),
   BasicNote (..),
   UpdateNoteFieldParam (..),
+  FindNotesParam (..),
   ankiConnect,
 ) where
 
 import Data.Aeson (Value, object, (.:), (.=))
 import Data.Aeson qualified as A
-import Data.Aeson.Types qualified as A
 import Data.Default (Default, def)
-import Data.Function ((&))
+import Data.Functor ((<&>))
 import Data.Map qualified as M
 import Data.Proxy (Proxy (..))
 import Data.Text qualified as T
@@ -29,6 +29,14 @@ import Network.HTTP.Req qualified as R
 type family AnkiConnectResult param
 class AnkiConnectParam param where
   operationName :: Proxy param -> String
+
+newtype AnkiConnectResultWrapper r = AnkiConnectResultWrapper {unwrapped :: Either Value r}
+instance A.FromJSON r => A.FromJSON (AnkiConnectResultWrapper r) where
+  parseJSON = A.withObject "AnkiConnectResult" $ \v -> do
+    maybeErr :: Maybe Value <- v .: "error"
+    case maybeErr of
+      Just err -> return (AnkiConnectResultWrapper (Left err))
+      Nothing -> (v .: "result") <&> Right <&> AnkiConnectResultWrapper
 
 ankiConnect :: forall p. (A.ToJSON p, AnkiConnectParam p, A.FromJSON (AnkiConnectResult p)) => AnkiConnectAddress -> p -> IO (Either Value (AnkiConnectResult p))
 ankiConnect address param = do
@@ -39,7 +47,7 @@ ankiConnect address param = do
         , "params" .= param
         , "version" .= (6 :: Int)
         ]
-  r <-
+  r :: AnkiConnectResultWrapper r <-
     R.runReq R.defaultHttpConfig $
       R.req
         R.POST
@@ -47,18 +55,8 @@ ankiConnect address param = do
         (R.ReqBodyJson payload)
         R.jsonResponse
         (R.port address.port)
-  let
-    v = R.responseBody r :: A.Object
-    parser =
-      do
-        maybeErr :: Maybe Value <- v .: "error"
-        case maybeErr of
-          Just err -> return (Left err)
-          Nothing -> do
-            val :: r <- v .: "result"
-            return (Right val)
-    res = A.parseEither (const parser) () & either error id
-  return res
+        <&> R.responseBody
+  return r.unwrapped
 
 data AnkiMedia = AnkiMedia
   { audio :: [FilePath]
@@ -128,3 +126,10 @@ instance (AnkiNote a) => A.ToJSON (UpdateNoteFieldParam a) where
             , "fields" .= ankiFields note
             ]
       ]
+
+newtype FindNotesParam = FindNotesParam {query :: String}
+type instance AnkiConnectResult FindNotesParam = [Int]
+instance AnkiConnectParam FindNotesParam where
+  operationName = const "findNotes"
+instance A.ToJSON FindNotesParam where
+  toJSON (FindNotesParam query) = object ["query" .= query]
