@@ -12,7 +12,8 @@ module Anki (
   AddNoteParam (..),
   AnkiConnectAddress (..),
   BasicNote (..),
-  addNote,
+  UpdateNoteFieldParam (..),
+  ankiConnect,
 ) where
 
 import Data.Aeson (Value, object, (.:), (.=))
@@ -82,6 +83,14 @@ data AnkiConnectAddress = AnkiConnectAddress
   , port :: Int
   }
 
+data AddNoteParam a = AddNoteParam
+  { note :: a
+  , deckName :: String
+  , tags :: [String]
+  }
+type instance AnkiConnectResult (AddNoteParam a) = Int
+instance AnkiConnectParam (AddNoteParam a) where
+  operationName = const "addNote"
 instance (AnkiNote a) => A.ToJSON (AddNoteParam a) where
   toJSON (AddNoteParam note deckName tags) =
     object
@@ -94,25 +103,28 @@ instance (AnkiNote a) => A.ToJSON (AddNoteParam a) where
             ]
       ]
 
-data AddNoteParam a = AddNoteParam
-  { note :: a
-  , deckName :: String
-  , tags :: [String]
-  }
-type instance AnkiConnectResult (AddNoteParam a) = Int
-
-instance AnkiConnectParam (AddNoteParam a) where
-  operationName = const "addNote"
-
-addNote :: (AnkiNote a) => AnkiConnectAddress -> AddNoteParam a -> IO (Either Value Int)
-addNote = ankiConnect
-
 data BasicNote = BasicNote
   { front :: String
   , back :: String
   }
-
 instance AnkiNote BasicNote where
   ankiModel = const "Basic"
   ankiFields x = M.fromList [("Front", x.front), ("Back", x.back)]
   ankiMedia _ = def
+
+data UpdateNoteFieldParam a = UpdateNoteFieldParam
+  { note :: a
+  , id :: Int
+  }
+type instance AnkiConnectResult (UpdateNoteFieldParam a) = ()
+instance AnkiConnectParam (UpdateNoteFieldParam a) where
+  operationName = const "updateNoteFields"
+instance (AnkiNote a) => A.ToJSON (UpdateNoteFieldParam a) where
+  toJSON (UpdateNoteFieldParam note id_) =
+    object
+      [ "note"
+          .= object
+            [ "id" .= id_
+            , "fields" .= ankiFields note
+            ]
+      ]

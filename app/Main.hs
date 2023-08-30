@@ -1,3 +1,6 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NoFieldSelectors #-}
+
 module Main (main) where
 
 import Anki
@@ -34,11 +37,10 @@ main = do
   --          <> command "render" (info (pure ToRenderedAst) idm)
   --      )
   res <-
-    addNote
+    ankiConnect
       (AnkiConnectAddress{ip = "127.0.0.1", port = 8765})
-      ( AddNoteParam
-          { deckName = "Default"
-          , tags = []
+      ( UpdateNoteFieldParam
+          { id = 1693366003448
           , note =
               BasicNote
                 { front = "front"
