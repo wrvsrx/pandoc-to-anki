@@ -1,9 +1,13 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE NoFieldSelectors #-}
 
 module Lib (
   ) where
 
+import Anki (BasicNote (..))
 import Codec.Binary.UTF8.String as U8
 import Control.Exception (assert)
 import Crypto.Hash.SHA256 (hash)
@@ -33,51 +37,56 @@ newtype PandocIDToAnkiNID = PandocIDToAnkiNID {unwrapped :: M.Map Text Int}
 -- Note + Just (Anki ID) -> UpdateNoteField
 -- Note + Nothing -> AddNote
 
-
-parseTheoremLikeType :: Text -> TheoremLikeType
-parseTheoremLikeType x = case x of
-  "theorem" -> Theorem
-  "example" -> Example
-  "remark" -> Remark
-
-nameMap :: M.Map Text Text
-nameMap =
-  M.fromList
-    [ ("theorem", "Theorem")
-    , ("example", "Example")
-    , ("remark", "Remark")
-    ]
-
-data TheoremLikeType = Theorem | Example | Remark | Algorithm
+-- nameMap :: M.Map Text Text
+-- nameMap =
+--   M.fromList
+--     [ ("theorem", "Theorem")
+--     , ("example", "Example")
+--     , ("remark", "Remark")
+--     ]
 
 data TheoremLike = TheoremLike
-  { t :: TheoremLikeType
-  , name :: Block
+  { kind :: Text
+  , attr :: Attr
+  , name :: [Inline]
   , content :: [Block]
   }
 
-pickTheoremKind nameMap cls = case filter (`M.member` nameMap) cls of
-  [] -> Nothing
-  [x] -> Just x
-  _ -> error "too many theorem class in a div"
+data ParseTheoremLikeFailure = BlockIsNotDiv | DivIsNotTheoremKind | DivIsEmpty | TooManyTheoremClassInDiv | NameIsNotPara
 
-pickTheorem :: Block -> Maybe TheoremLike
-pickTheorem x = do
-  (id, cls, dict, blocks) <- case x of Div (id, cls, dict) blocks -> Just (id, cls, dict, blocks); _ -> Nothing
-  (theoremNameCandidate, theoremContent) <- if length blocks > 1 then Just (head blocks, tail blocks) else Nothing
-  theoremName <- case theoremNameCandidate of Para x -> Just x; _ -> Nothing
-  theoremKind <- pickTheoremKind nameMap cls
-  Just $ Theorem (id, cls, dict) theoremKind theoremName theoremContent
+pickTheorem :: M.Map Text Text -> Block -> Either ParseTheoremLikeFailure TheoremLike
+pickTheorem m b = do
+  (pid, cls, dict, blocks) <- case b of
+    Div (pid, cls, dict) blocks -> Right (pid, cls, dict, blocks)
+    _ -> Left BlockIsNotDiv
+  kind <- case filter (`M.member` m) cls of
+    [] -> Left DivIsNotTheoremKind
+    [x] -> Right x
+    _ -> Left TooManyTheoremClassInDiv
+  (nameToParse, content) <- case blocks of
+    x : xs -> Right (x, xs)
+    [] -> Left DivIsEmpty
+  name <- case nameToParse of
+    Para x -> Right x
+    _ -> Left NameIsNotPara
+  Right $ TheoremLike kind (pid, cls, dict) name content
 
--- renderTheorem :: Dict -> Theorem -> Block
--- renderTheorem nameMap (Theorem attr theoremKind theoremName theoremContent) =
---   let theoremKindRendered = fromMaybe (error "no such theorem type") (theoremKind `M.lookup` nameMap)
---       theoremNameRendered = Para [Strong [Str theoremKindRendered], Space, Str "(", Span ("", ["theorem-name"], []) theoremName, Str ")"]
+theoremLikeToAnki :: M.Map Text Text -> TheoremLike -> BasicNote
+theoremLikeToAnki = undefined
+
+addMarkdownToAnki :: M.Map Text Text -> ()
+addMarkdownToAnki = undefined
+
+-- renderTheorem :: M.Map Text Text -> TheoremLike -> Block
+-- renderTheorem m theorem =
+--   let renderedKind = fromMaybe (error "no such theorem type") (theorem.kind `M.lookup` m)
+--       renderedName = Para [Strong [Str renderedKind], Space, Str "(", Span ("", ["theorem-name"], []) theorem.name, Str ")"]
 --    in Div
---         attr
---         [ Div ("", ["theorem-head"], []) [theoremNameRendered]
---         , Div ("", ["theorem-content"], []) theoremContent
+--         theorem.attr
+--         [ Div ("", ["theorem-head"], []) [renderedName]
+--         , Div ("", ["theorem-content"], []) theorem.content
 --         ]
+
 --
 -- renderFilter :: Dict -> Block -> Block
 -- renderFilter nameMap x =
