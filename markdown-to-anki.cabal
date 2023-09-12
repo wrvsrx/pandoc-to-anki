@@ -73,7 +73,7 @@ executable markdown-to-anki
   -- Other library packages from which modules are imported.
   build-depends:
     , aeson
-    , base                  ^>=4.16.4.0
+    , base
     , blaze-html
     , bytestring
     , containers
