@@ -5,6 +5,7 @@ module Main (main) where
 
 import Anki
 import AnkiNote
+import Control.Monad.Trans.Except (runExceptT)
 import qualified Data.ByteString.Char8 as B
 import Data.Default (def)
 import Data.Either (fromRight)
@@ -38,16 +39,17 @@ main = do
   --          <> command "render" (info (pure ToRenderedAst) idm)
   --      )
   res <-
-    ankiConnect
-      (AnkiConnectAddress{ip = "127.0.0.1", port = 8765})
-      ( UpdateNoteFieldParam
-          { id = 1693366003448
-          , note =
-              BasicNote
-                { front = "front"
-                , back = "back"
-                }
-          }
-      )
+    runExceptT $
+      ankiConnect
+        (AnkiConnectAddress{ip = "127.0.0.1", port = 8765})
+        ( UpdateNoteFieldParam
+            { id = 1693366003448
+            , note =
+                BasicNote
+                  { front = "front"
+                  , back = "back"
+                  }
+            }
+        )
   print res
   return ()

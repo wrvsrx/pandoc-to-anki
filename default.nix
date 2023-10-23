@@ -1,6 +1,7 @@
 { mkDerivation, aeson, base, blaze-html, bytestring, containers
 , cryptohash-sha256, data-default, lib, optparse-applicative
-, pandoc, pandoc-types, req, text, utf8-string, uuid
+, pandoc, pandoc-types, process, req, text, transformers
+, utf8-string, uuid
 }:
 mkDerivation {
   pname = "markdown-to-anki";
@@ -10,8 +11,8 @@ mkDerivation {
   isExecutable = true;
   executableHaskellDepends = [
     aeson base blaze-html bytestring containers cryptohash-sha256
-    data-default optparse-applicative pandoc pandoc-types req text
-    utf8-string uuid
+    data-default optparse-applicative pandoc pandoc-types process req
+    text transformers utf8-string uuid
   ];
   license = lib.licenses.mit;
   mainProgram = "markdown-to-anki";

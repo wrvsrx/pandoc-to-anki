@@ -16,6 +16,8 @@ module Anki (
 ) where
 
 import AnkiNote (AnkiNote (..))
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Except (ExceptT (..), except, withExceptT)
 import Data.Aeson (Value, object, (.:), (.=))
 import Data.Aeson qualified as A
 import Data.Functor ((<&>))
@@ -35,7 +37,7 @@ instance (A.FromJSON r) => A.FromJSON (AnkiConnectResultWrapper r) where
       Just err -> return (AnkiConnectResultWrapper (Left err))
       Nothing -> (v .: "result") <&> Right <&> AnkiConnectResultWrapper
 
-ankiConnect :: forall p. (A.ToJSON p, AnkiConnectParam p, A.FromJSON (AnkiConnectResult p)) => AnkiConnectAddress -> p -> IO (Either Value (AnkiConnectResult p))
+ankiConnect :: forall p. (A.ToJSON p, AnkiConnectParam p, A.FromJSON (AnkiConnectResult p)) => AnkiConnectAddress -> p -> ExceptT String IO (AnkiConnectResult p)
 ankiConnect address param = do
   let
     payload =
@@ -44,16 +46,19 @@ ankiConnect address param = do
         , "params" .= param
         , "version" .= (6 :: Int)
         ]
-  r :: AnkiConnectResultWrapper r <-
-    R.runReq R.defaultHttpConfig $
-      R.req
-        R.POST
-        (R.http (T.pack address.ip))
-        (R.ReqBodyJson payload)
-        R.jsonResponse
-        (R.port address.port)
-        <&> R.responseBody
-  return r.unwrapped
+  r :: AnkiConnectResultWrapper (AnkiConnectResult p) <-
+    liftIO $
+      R.runReq R.defaultHttpConfig $
+        R.req
+          R.POST
+          (R.http (T.pack address.ip))
+          (R.ReqBodyJson payload)
+          R.jsonResponse
+          (R.port address.port)
+          <&> R.responseBody
+  withExceptT (\x -> "anki connect fail:\n" <> show x) (except r.unwrapped)
+
+-- return r.unwrapped
 
 data AnkiConnectAddress = AnkiConnectAddress
   { ip :: String

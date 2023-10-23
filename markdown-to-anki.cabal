@@ -67,6 +67,7 @@ executable markdown-to-anki
     Anki
     AnkiNote
     Lib
+    Words
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
@@ -83,8 +84,10 @@ executable markdown-to-anki
     , optparse-applicative
     , pandoc
     , pandoc-types
+    , process
     , req
     , text
+    , transformers
     , utf8-string
     , uuid
 
