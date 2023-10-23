@@ -12,6 +12,7 @@ module Anki (
   AddNoteParam (..),
   AnkiConnectAddress (..),
   BasicNote (..),
+  BasicReverseNote (..),
   UpdateNoteFieldParam (..),
   FindNotesParam (..),
   ankiConnect,
@@ -31,7 +32,7 @@ class AnkiConnectParam param where
   operationName :: Proxy param -> String
 
 newtype AnkiConnectResultWrapper r = AnkiConnectResultWrapper {unwrapped :: Either Value r}
-instance A.FromJSON r => A.FromJSON (AnkiConnectResultWrapper r) where
+instance (A.FromJSON r) => A.FromJSON (AnkiConnectResultWrapper r) where
   parseJSON = A.withObject "AnkiConnectResult" $ \v -> do
     maybeErr :: Maybe Value <- v .: "error"
     case maybeErr of
@@ -109,6 +110,12 @@ instance AnkiNote BasicNote where
   ankiModel = const "Basic"
   ankiFields x = M.fromList [("Front", x.front), ("Back", x.back)]
   ankiMedia _ = def
+
+newtype BasicReverseNote = BasicReverseNote BasicNote
+instance AnkiNote BasicReverseNote where
+  ankiModel = const "Basic (and reversed card)"
+  ankiFields (BasicReverseNote x) = ankiFields x
+  ankiMedia (BasicReverseNote x) = ankiMedia x
 
 data UpdateNoteFieldParam a = UpdateNoteFieldParam
   { note :: a
