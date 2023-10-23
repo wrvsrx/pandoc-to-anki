@@ -1,12 +1,11 @@
-{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE NoFieldSelectors #-}
 
 module Words (
   addOrUpdateWord,
+  TranslatedWord (..),
 ) where
 
 import Anki (
@@ -19,19 +18,25 @@ import Anki (
 import AnkiNote
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except (ExceptT, throwE)
-import System.Process (readProcess)
+import Data.Aeson qualified as A
+import GHC.Generics (Generic)
 import Text.Printf (printf)
 
-translateWord :: String -> IO String
-translateWord word = readProcess "trans" [word] ""
+data TranslatedWord = TranslatedWord
+  { eng :: String
+  , chn :: String
+  }
+  deriving (Generic)
 
-addOrUpdateWord :: AnkiConnectAddress -> String -> [String] -> String -> ExceptT String IO ()
+instance A.FromJSON TranslatedWord
+instance A.ToJSON TranslatedWord
+
+addOrUpdateWord :: AnkiConnectAddress -> String -> [String] -> TranslatedWord -> ExceptT String IO ()
 addOrUpdateWord address deckName tags word = do
   let
-    queryString :: String = printf "deck:%s front:%s" deckName word
-  translatedWord <- liftIO (translateWord word)
+    queryString :: String = printf "deck:%s front:%s" deckName word.eng
   let
-    note = BasicReverseNote (BasicNote{front = word, back = translatedWord})
+    note = BasicReverseNote (BasicNote{front = word.eng, back = word.chn})
   noteIds <- ankiConnect address (FindNotesParam{query = queryString})
   case noteIds of
     [] -> do

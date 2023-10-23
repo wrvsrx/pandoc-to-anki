@@ -14,19 +14,19 @@ import Codec.Binary.UTF8.String as U8
 import Control.Exception (assert)
 import Crypto.Hash.SHA256 (hash)
 import Data.Aeson ((.=))
-import qualified Data.Aeson as A
+import Data.Aeson qualified as A
 import Data.Bits (shift)
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.ByteString.UTF8 as BU
+import Data.ByteString qualified as B
+import Data.ByteString.Lazy qualified as BL
+import Data.ByteString.UTF8 qualified as BU
 import Data.Either (fromRight)
-import qualified Data.Map as M
+import Data.Map qualified as M
 import Data.Maybe (fromMaybe, isNothing, mapMaybe)
 import Data.Text (Text)
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
-import qualified Data.UUID as UUID
-import qualified Data.UUID.V5 as UUID
+import Data.Text qualified as T
+import Data.Text.Encoding qualified as T
+import Data.UUID qualified as UUID
+import Data.UUID.V5 qualified as UUID
 import Text.Pandoc
 import Text.Pandoc.Shared (stringify)
 
@@ -97,7 +97,7 @@ blocksToText x = fromRight (error "fail render block") (runPure $ writeHtml5Stri
 theoremToAnkiNote :: Dict -> Theorem -> Anki
 theoremToAnkiNote nameMap t =
   let Div (did, cls, dict) [theoremHead, theoremContent] = renderTheorem nameMap t
-      theoremKind' = theoremKind t
+      theoremKind' = t.theoremKind
       theoremKindTag = fromMaybe (error "no such theorem type") (theoremKind' `M.lookup` nameMap)
       [question, answer] = map blocksToText [[theoremHead], [theoremContent]]
       (tags, guid) = computeAnkiTagsAndGuid dict question
@@ -151,7 +151,7 @@ pandocToAnkiDeck nameMap (Pandoc (Meta m) bs) =
         ms <- case a of MetaList m -> Just m; _ -> Nothing
         Just $ map ((\s -> if ' ' `T.elem` s then error "no space are allowed in tag" else s) . metaInlinesToText . ensureMetaInlines) ms
       (deckTitle, deckUUID) = pickDeckTitleFromMeta m
-      ankiNotes = map (\anki -> anki{tags = tags anki <> globalTags}) (blocksToAnkiNotes nameMap bs)
+      ankiNotes = map (\anki -> anki{tags = anki.tags <> globalTags}) (blocksToAnkiNotes nameMap bs)
       ankiDeck = AnkiDeck deckTitle deckUUID ankiNotes
    in ankiDeck
 
@@ -177,7 +177,7 @@ attachGUIDToTheorem nameMap x = fromMaybe x $ do
   ((did, cls, dict), bs) <- pickDiv x
   t <- pickTheorem nameMap x
   let a = theoremToAnkiNote nameMap t
-  if isNothing ((snd . pickAnkiTagsAndGuid) dict) then Just (Div (did, cls, dict <> [("guid", guid a)]) bs) else Nothing
+  if isNothing ((snd . pickAnkiTagsAndGuid) dict) then Just (Div (did, cls, dict <> [("guid", a.guid)]) bs) else Nothing
 
 rawTexToRawMarkdown :: Block -> Block
 rawTexToRawMarkdown (RawBlock "tex" x) = RawBlock "markdown" x

@@ -68,6 +68,15 @@ executable markdown-to-anki
     AnkiNote
     Lib
     Words
+    AddWords
+    TranslateWord
+
+  default-extensions:
+    ImportQualifiedPost
+    ScopedTypeVariables
+    OverloadedRecordDot
+    NoFieldSelectors
+    DuplicateRecordFields
 
   -- LANGUAGE extensions used by modules in this package.
   -- other-extensions:
