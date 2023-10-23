@@ -4,6 +4,7 @@
 module Main (main) where
 
 import Anki
+import AnkiNote
 import qualified Data.ByteString.Char8 as B
 import Data.Default (def)
 import Data.Either (fromRight)
