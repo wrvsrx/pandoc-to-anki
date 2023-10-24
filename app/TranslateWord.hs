@@ -11,17 +11,16 @@ import Data.Function ((&))
 import Data.Functor ((<&>))
 import Data.Map qualified as M
 import Data.Maybe (fromJust)
-import System.Exit (ExitCode (..))
 import System.Process (readProcessWithExitCode)
 import Words (TranslatedWord (..))
 import Prelude hiding (words)
 
 translateWord :: String -> ExceptT String IO String
 translateWord word = do
-  (code, res, err) <- liftIO $ readProcessWithExitCode "trans" ["-no-ansi", word] ""
-  case code of
-    ExitSuccess -> return res
-    ExitFailure _ -> throwE err
+  (_, res, err) <- liftIO $ readProcessWithExitCode "trans" ["-no-ansi", word] ""
+  case err of
+    "" -> return res
+    x -> throwE x
 
 translateWordsFromStdin :: IO ()
 translateWordsFromStdin = do
@@ -47,8 +46,10 @@ translateWordsIncrementally wordsFile translatedFile = do
           s <- case M.lookup word translatedWords of
             Just chn -> return $ TranslatedWord{eng = word, chn = chn}
             Nothing -> do
-              translatedWord <- runExceptT (translateWord word) <&> either error id
-              return $ TranslatedWord{eng = word, chn = translatedWord}
+              translatedResult <- runExceptT (translateWord word)
+              case translatedResult of
+                Left err -> error $ "fail to translate word: " <> word <> "\nerror message: " <> err
+                Right x -> return $ TranslatedWord{eng = word, chn = x}
           putStrLn $ "finish translate " <> word
           return s
       )
