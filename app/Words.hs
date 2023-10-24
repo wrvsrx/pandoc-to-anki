@@ -36,7 +36,7 @@ addOrUpdateWord address deckName tags word = do
   let
     queryString :: String = printf "deck:%s front:%s" deckName word.eng
   let
-    note = BasicReverseNote (BasicNote{front = word.eng, back = word.chn})
+    note = BasicNote{front = word.eng, back = word.chn}
   noteIds <- ankiConnect address (FindNotesParam{query = queryString})
   case noteIds of
     [] -> do
