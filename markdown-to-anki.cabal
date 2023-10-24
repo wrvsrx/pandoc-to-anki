@@ -70,6 +70,7 @@ executable markdown-to-anki
     Words
     AddWords
     TranslateWord
+    Cli
 
   default-extensions:
     ImportQualifiedPost
