@@ -3,13 +3,25 @@
 module AddWords (addWordsFromStdin) where
 
 import Anki (AnkiConnectAddress (..))
-import Data.ByteString qualified as BL
-import Words (addOrUpdateWord)
+import Control.Monad.Trans.Except (runExceptT)
+import Data.Aeson qualified as A
+import Data.ByteString.Lazy qualified as BL
+import Data.Functor ((<&>))
+import Data.Maybe (fromJust)
+import Words (TranslatedWord (..), addOrUpdateWord)
 
 addWordsFromStdin :: IO ()
 addWordsFromStdin = do
-  cnt <- BL.getContents
+  translatedWords :: [TranslatedWord] <- BL.getContents <&> A.decode <&> fromJust
   let
     address = AnkiConnectAddress{ip = "127.0.0.1", port = 8765}
-
-  return ()
+  res <-
+    runExceptT $
+      mapM_
+        ( \x -> do
+            addOrUpdateWord address "Default" ["simulation"] x
+        )
+        translatedWords
+  case res of
+    Left err -> error err
+    Right () -> return ()
