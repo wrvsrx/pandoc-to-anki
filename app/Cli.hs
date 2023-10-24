@@ -1,22 +1,28 @@
 module Cli (
+  MarkdownToAnkiOpt (..),
   optParser,
   optParserIO,
-  optToFunc,
 ) where
 
-import Data.ByteString.Char8 qualified as B
-import Data.Map qualified as M
-import Data.Text qualified as T
-import Lib
-import Options.Applicative (Parser, command, customExecParser, hsubparser, idm, info, prefs, showHelpOnEmpty)
-import Text.Pandoc
+import Options.Applicative (
+  Parser,
+  command,
+  customExecParser,
+  hsubparser,
+  idm,
+  info,
+  metavar,
+  prefs,
+  showHelpOnEmpty,
+  strArgument,
+ )
 
-data MarkdownToAnkiOpt = ToAnki | ToRenderedAst | ToAstWithGUID
-
-optToFunc :: MarkdownToAnkiOpt -> M.Map T.Text T.Text -> Pandoc -> B.ByteString
-optToFunc ToAnki = pandocToAnkiNotesJSON
-optToFunc ToRenderedAst = pandocToRenderedAstJSON
-optToFunc ToAstWithGUID = pandocToAstWithGUIDJSON
+data MarkdownToAnkiOpt
+  = ToAnki
+  | ToRenderedAst
+  | ToAstWithGUID
+  | TranslateWord FilePath FilePath
+  | TranslatedWordToAnki
 
 optParser :: Parser MarkdownToAnkiOpt
 optParser =
@@ -24,6 +30,16 @@ optParser =
     ( command "lock" (info (pure ToAstWithGUID) idm)
         <> command "anki" (info (pure ToAnki) idm)
         <> command "render" (info (pure ToRenderedAst) idm)
+        <> command "words-to-anki" (info (pure TranslatedWordToAnki) idm)
+        <> command
+          "translate"
+          ( info
+              ( TranslateWord
+                  <$> strArgument (metavar "words file")
+                  <*> strArgument (metavar "translated file")
+              )
+              idm
+          )
     )
 
 optParserIO :: IO MarkdownToAnkiOpt
