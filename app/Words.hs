@@ -16,7 +16,6 @@ import Anki (
   ankiConnect,
  )
 import AnkiNote
-import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except (ExceptT, throwE)
 import Data.Aeson qualified as A
 import GHC.Generics (Generic)
