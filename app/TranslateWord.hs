@@ -17,7 +17,7 @@ import Prelude hiding (words)
 
 translateWord :: String -> ExceptT String IO String
 translateWord word = do
-  (_, res, err) <- liftIO $ readProcessWithExitCode "trans" ["-no-ansi", word] ""
+  (_, res, err) <- liftIO $ readProcessWithExitCode "trans" ["-no-ansi", ":zh", word] ""
   case err of
     "" -> return res
     x -> throwE x
