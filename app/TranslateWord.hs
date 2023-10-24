@@ -3,18 +3,25 @@ module TranslateWord (
   translateWordsIncrementally,
 ) where
 
+import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Except (ExceptT (..), runExceptT, throwE)
 import Data.Aeson qualified as A
 import Data.ByteString.Lazy qualified as BL
 import Data.Function ((&))
 import Data.Functor ((<&>))
 import Data.Map qualified as M
 import Data.Maybe (fromJust)
-import System.Process (readProcess)
+import System.Exit (ExitCode (..))
+import System.Process (readProcessWithExitCode)
 import Words (TranslatedWord (..))
 import Prelude hiding (words)
 
-translateWord :: String -> IO String
-translateWord word = readProcess "trans" [word] ""
+translateWord :: String -> ExceptT String IO String
+translateWord word = do
+  (code, res, err) <- liftIO $ readProcessWithExitCode "trans" ["-no-ansi", word] ""
+  case code of
+    ExitSuccess -> return res
+    ExitFailure _ -> throwE err
 
 translateWordsFromStdin :: IO ()
 translateWordsFromStdin = do
@@ -24,7 +31,7 @@ translateWordsFromStdin = do
   translatedWords <-
     mapM
       ( \word -> do
-          translatedWord <- translateWord word
+          translatedWord <- runExceptT (translateWord word) <&> either error id
           return $ TranslatedWord{eng = word, chn = translatedWord}
       )
       words
@@ -36,12 +43,14 @@ translateWordsIncrementally wordsFile translatedFile = do
   translatedWords :: M.Map String String <- BL.readFile translatedFile <&> A.decode <&> fromJust <&> map (\(x :: TranslatedWord) -> (x.eng, x.chn)) <&> M.fromList
   translatedWordsNew <-
     mapM
-      ( \word ->
-          case M.lookup word translatedWords of
+      ( \word -> do
+          s <- case M.lookup word translatedWords of
             Just chn -> return $ TranslatedWord{eng = word, chn = chn}
             Nothing -> do
-              translatedWord <- translateWord word
+              translatedWord <- runExceptT (translateWord word) <&> either error id
               return $ TranslatedWord{eng = word, chn = translatedWord}
+          putStrLn $ "finish translate " <> word
+          return s
       )
       words
-  BL.putStr $ A.encode translatedWordsNew
+  BL.writeFile translatedFile (A.encode translatedWordsNew)
