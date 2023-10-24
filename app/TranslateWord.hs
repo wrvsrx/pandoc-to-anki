@@ -49,7 +49,17 @@ translateWordsIncrementally wordsFile translatedFile = do
               translatedResult <- runExceptT (translateWord word)
               case translatedResult of
                 Left err -> error $ "fail to translate word: " <> word <> "\nerror message: " <> err
-                Right x -> return $ TranslatedWord{eng = word, chn = x}
+                Right x ->
+                  return $
+                    TranslatedWord
+                      { eng = word
+                      , chn =
+                          x
+                            & lines
+                            & filter (/= "")
+                            & map (\y -> "<p>" <> y <> "</p>")
+                            & unlines
+                      }
           putStrLn $ "finish translate " <> word
           return s
       )

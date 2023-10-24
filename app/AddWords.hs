@@ -19,7 +19,7 @@ addWordsFromStdin = do
     runExceptT $
       mapM_
         ( \x -> do
-            addOrUpdateWord address "Default" ["simulation"] x
+            addOrUpdateWord address "Paper Words" [] x
         )
         translatedWords
   case res of

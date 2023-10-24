@@ -16,6 +16,7 @@ import Anki (
   ankiConnect,
  )
 import AnkiNote
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Except (ExceptT, throwE)
 import Data.Aeson qualified as A
 import GHC.Generics (Generic)
@@ -48,6 +49,7 @@ addOrUpdateWord address deckName tags word = do
               , tags = tags
               }
           )
+      liftIO $ putStrLn "add a note"
       return ()
     [idNote] -> do
       ankiConnect
@@ -57,5 +59,6 @@ addOrUpdateWord address deckName tags word = do
             , id = idNote
             }
         )
+      liftIO $ putStrLn "update a note"
     _ -> do
       throwE "addOrUpdateWord: too much search result"
