@@ -34,12 +34,13 @@ instance A.ToJSON TranslatedWord
 addOrUpdateWord :: AnkiConnectAddress -> String -> [String] -> TranslatedWord -> ExceptT String IO ()
 addOrUpdateWord address deckName tags word = do
   let
-    queryString :: String = printf "deck:%s front:%s" deckName word.eng
+    queryString :: String = printf "deck:\"%s\" front:\"%s\"" deckName word.eng
   let
     note = BasicNote{front = word.eng, back = word.chn}
   noteIds <- ankiConnect address (FindNotesParam{query = queryString})
   case noteIds of
     [] -> do
+      liftIO $ putStrLn ("adding a note: " <> word.eng)
       _ <-
         ankiConnect
           address
@@ -49,9 +50,9 @@ addOrUpdateWord address deckName tags word = do
               , tags = tags
               }
           )
-      liftIO $ putStrLn "add a note"
       return ()
     [idNote] -> do
+      liftIO $ putStrLn "updating a note"
       ankiConnect
         address
         ( UpdateNoteFieldParam
@@ -59,6 +60,5 @@ addOrUpdateWord address deckName tags word = do
             , id = idNote
             }
         )
-      liftIO $ putStrLn "update a note"
     _ -> do
       throwE "addOrUpdateWord: too much search result"
