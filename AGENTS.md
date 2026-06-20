@@ -34,7 +34,7 @@ Generated `.apkg` files are ignored by git.
 
 - `src/main.rs` defines the CLI.
 - `src/export.rs` creates a temporary Anki collection, adds a fixed `Basic` note, and calls `Collection::export_apkg()`.
-- The project depends on official Anki Rust code through the forked submodule at `externals/anki`, currently based on release tag `26.05`, using `externals/anki/rslib` as a path dependency.
+- The project depends on official Anki Rust code through the forked submodule at `externals/anki`, currently pointing at fork tag `markdown-to-anki-26.05-buildfix`, based on Anki release tag `26.05`, using `externals/anki/rslib` as a path dependency.
 - `tokio` is included with `io-util` because Anki's crate needs that feature through Cargo feature unification.
 
 The first version intentionally uses the stock Anki `Basic` note type. Do not add JSON or Markdown input handling to this milestone unless requested.
