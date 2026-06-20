@@ -2,7 +2,7 @@
 
 Rust CLI for generating Anki packages from Pandoc JSON AST input.
 
-The current implementation extracts `::: anki` fenced div blocks from a Pandoc AST and creates one Basic Anki note for each block.
+The current implementation extracts identified `anki` fenced div blocks from a Pandoc AST and creates one Basic Anki note for each block.
 
 The Anki Rust dependency is vendored as a git submodule at `externals/anki`, currently pointing at the fork tag `markdown-to-anki-26.05-buildfix`, based on Anki release tag `26.05`.
 
@@ -31,7 +31,7 @@ cargo run -- apkg --input notes.json --output notes.apkg
 An input block like:
 
 ```markdown
-::: anki
+::: {#card-1 .anki}
 first block
 
 following block 1
@@ -40,7 +40,7 @@ following block 2
 :::
 ```
 
-creates one note where the first Pandoc block is the front, and the remaining blocks are the back.
+creates one note where `card-1` is the persistent Anki note `guid`, the first Pandoc block is the front, and the remaining blocks are the back. `anki` blocks without an id are ignored.
 
 ## Demo
 

@@ -25,7 +25,7 @@ fn collect_notes(blocks: &[Block], notes: &mut Vec<NoteInput>) {
     for block in blocks {
         match block {
             Block::Div(attr, children) if has_class(attr, ANKI_CLASS) => {
-                if let Some(note) = note_from_anki_div(attr, children, notes.len()) {
+                if let Some(note) = note_from_anki_div(attr, children) {
                     notes.push(note);
                 }
             }
@@ -35,10 +35,11 @@ fn collect_notes(blocks: &[Block], notes: &mut Vec<NoteInput>) {
     }
 }
 
-fn note_from_anki_div(attr: &Attr, blocks: &[Block], index: usize) -> Option<NoteInput> {
+fn note_from_anki_div(attr: &Attr, blocks: &[Block]) -> Option<NoteInput> {
     let (front, back) = blocks.split_first()?;
+    let guid = note_guid(attr)?;
     Some(NoteInput {
-        guid: note_guid(attr, index),
+        guid,
         front: render_block(front),
         back: render_blocks(back),
     })
@@ -48,11 +49,8 @@ fn has_class((_, classes, _): &Attr, class: &str) -> bool {
     classes.iter().any(|candidate| candidate == class)
 }
 
-fn note_guid((id, _, kvs): &Attr, index: usize) -> String {
-    kvs.iter()
-        .find_map(|(key, value)| (key == "guid").then_some(value.clone()))
-        .or_else(|| (!id.is_empty()).then(|| id.clone()))
-        .unwrap_or_else(|| format!("markdown-to-anki-note-{}", index + 1))
+fn note_guid((id, _, _): &Attr) -> Option<String> {
+    (!id.is_empty()).then(|| id.clone())
 }
 
 fn render_blocks(blocks: &[Block]) -> String {
@@ -189,7 +187,7 @@ mod tests {
             {
               "t": "Div",
               "c": [
-                ["card-1", ["anki"], [["guid", "stable-guid"]]],
+                ["card-1", ["anki"], []],
                 [
                   {"t": "Para", "c": [{"t": "Str", "c": "first"}, {"t": "Space"}, {"t": "Str", "c": "block"}]},
                   {"t": "Para", "c": [{"t": "Str", "c": "following"}, {"t": "Space"}, {"t": "Str", "c": "block"}, {"t": "Space"}, {"t": "Str", "c": "1"}]},
@@ -203,11 +201,46 @@ mod tests {
         let notes = notes_from_json(input).unwrap();
 
         assert_eq!(notes.len(), 1);
-        assert_eq!(notes[0].guid, "stable-guid");
+        assert_eq!(notes[0].guid, "card-1");
         assert_eq!(notes[0].front, "<p>first block</p>");
         assert_eq!(
             notes[0].back,
             "<p>following block 1</p>\n<p>following block 2</p>"
         );
+    }
+
+    #[test]
+    fn skips_anki_div_without_id() {
+        let input = r#"{
+          "pandoc-api-version": [1, 23],
+          "meta": {},
+          "blocks": [
+            {
+              "t": "Div",
+              "c": [
+                ["", ["anki"], []],
+                [
+                  {"t": "Para", "c": [{"t": "Str", "c": "front"}]},
+                  {"t": "Para", "c": [{"t": "Str", "c": "back"}]}
+                ]
+              ]
+            },
+            {
+              "t": "Div",
+              "c": [
+                ["card-2", ["anki"], []],
+                [
+                  {"t": "Para", "c": [{"t": "Str", "c": "front"}]},
+                  {"t": "Para", "c": [{"t": "Str", "c": "back"}]}
+                ]
+              ]
+            }
+          ]
+        }"#;
+
+        let notes = notes_from_json(input).unwrap();
+
+        assert_eq!(notes.len(), 1);
+        assert_eq!(notes[0].guid, "card-2");
     }
 }
