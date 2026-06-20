@@ -56,7 +56,7 @@ Relative paths are resolved from the config file's directory. Commands are also 
 An input block like:
 
 ```markdown
-::: {#card-1 .anki}
+::: {#note-1 .anki}
 first block
 
 following block 1
@@ -65,4 +65,4 @@ following block 2
 :::
 ```
 
-creates one note where `rust-lifetimes#card-1` is the persistent Anki note `guid`, the first Pandoc block is the front, and the remaining blocks are the back. `anki` blocks without an id are ignored.
+creates one note where `rust-lifetimes#note-1` is the persistent Anki note `guid`, the first Pandoc block is the front, and the remaining blocks are the back. `anki` blocks without an id are ignored.
