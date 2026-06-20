@@ -38,8 +38,6 @@
                 pkgs.protobuf
               ];
             };
-
-            formatter = pkgs.nixfmt;
           };
       }
     );
