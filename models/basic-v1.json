@@ -1,0 +1,25 @@
+{
+  "id": 1781974503754,
+  "name": "Pandoc Basic",
+  "fields": [
+    {
+      "ord": 0,
+      "name": "Front",
+      "id": 1781974503755
+    },
+    {
+      "ord": 1,
+      "name": "Back",
+      "id": 1781974503756
+    }
+  ],
+  "templates": [
+    {
+      "ord": 0,
+      "name": "Forward",
+      "id": 1781974503757,
+      "q_format": "{{Front}}",
+      "a_format": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}"
+    }
+  ]
+}
