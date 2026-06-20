@@ -47,7 +47,7 @@ Generated `.apkg` files are ignored by git.
 
 The Pandoc-backed export path intentionally uses a Basic-compatible note type with a hard-coded Anki model id so repeated imports can match the same Anki note type. Keep APKG generation separated from Pandoc parsing so the official Anki export path remains easy to test independently.
 
-The hard-coded model id is part of the exported APKG compatibility contract. Do not change the model schema for the same id casually. In manual testing, importing two decks with the same model id but different model information, such as changed fields or CSS/template schema, triggered a fatal Anki import error. Field additions/removals in particular appear to lead to index-out-of-range failures during import. If field/template structure needs to change, use a new model id or write an explicit migration plan instead of reusing the existing id.
+The hard-coded model id is part of the exported APKG compatibility contract. Do not change the model schema for the same id casually. In manual testing, importing two decks with the same model id but different model information, such as changed fields or CSS/template schema, triggered a fatal Anki import error. Field additions/removals in particular can panic in Anki 25.09.4's `rslib/src/notetype/merge.rs` while merging note types: `self.fields.swap(i, index)` can receive `index == len`, producing `index out of bounds: the len is 4 but the index is 4`, which propagates as a `pyo3_runtime.PanicException` from `import_anki_package_raw`. If field/template structure needs to change, use a new model id or write an explicit migration plan instead of reusing the existing id.
 
 Config rules:
 
