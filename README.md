@@ -1,12 +1,10 @@
 # markdown-to-anki
 
-Experimental Rust rewrite for generating Anki packages from Markdown-derived data.
+Rust CLI for generating Anki packages from Pandoc JSON AST input.
 
-The first milestone only verifies that this project can create an `.apkg` through Anki's official Rust collection exporter.
+The current implementation extracts `::: anki` fenced div blocks from a Pandoc AST and creates one Basic Anki note for each block.
 
 The Anki Rust dependency is vendored as a git submodule at `externals/anki`, currently pointing at the fork tag `markdown-to-anki-26.05-buildfix`, based on Anki release tag `26.05`.
-
-## Demo
 
 Initialize submodules before building:
 
@@ -14,10 +12,42 @@ Initialize submodules before building:
 git submodule update --init --recursive
 ```
 
-`anki_proto` requires `protoc` at build time. With Nix:
+`anki_proto` requires `protoc` at build time.
+
+## Usage
+
+Convert Markdown to Pandoc JSON and generate an APKG:
 
 ```sh
-nix shell nixpkgs#protobuf -c cargo run -- apkg --output demo.apkg
+pandoc -f markdown -t json notes.md | nix shell nixpkgs#protobuf -c cargo run -- apkg --output notes.apkg
+```
+
+Or read the AST from a file:
+
+```sh
+nix shell nixpkgs#protobuf -c cargo run -- apkg --input notes.json --output notes.apkg
+```
+
+An input block like:
+
+```markdown
+::: anki
+first block
+
+following block 1
+
+following block 2
+:::
+```
+
+creates one note where the first Pandoc block is the front, and the remaining blocks are the back.
+
+## Demo
+
+To run the fixed demo exporter:
+
+```sh
+nix shell nixpkgs#protobuf -c cargo run -- demo --output demo.apkg
 ```
 
 This creates a fixed demo deck named `Markdown To Anki Demo`.

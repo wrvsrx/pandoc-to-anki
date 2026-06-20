@@ -2,6 +2,7 @@
   mkShell,
   rustc,
   cargo,
+  rustfmt,
   protobuf,
 }:
 mkShell {
@@ -9,5 +10,7 @@ mkShell {
     rustc
     cargo
     protobuf
+
+    rustfmt
   ];
 }

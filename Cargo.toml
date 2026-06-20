@@ -8,5 +8,7 @@ publish = false
 anki = { path = "externals/anki/rslib", package = "anki" }
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
+pandoc_ast = "0.8.6"
+serde_json = "1.0"
 tempfile = "3.10"
 tokio = { version = "1", features = ["io-util"] }
