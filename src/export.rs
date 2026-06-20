@@ -15,7 +15,7 @@ pub struct NoteInput {
 pub fn write_apkg(output: impl AsRef<Path>, deck_name: &str, notes: &[NoteInput]) -> Result<()> {
     let output = output.as_ref();
     let temp_dir = Builder::new()
-        .prefix("markdown-to-anki-")
+        .prefix("pandoc-to-anki-")
         .tempdir()
         .context("failed to create temporary collection directory")?;
     let collection_path = temp_dir.path().join("demo.anki2");
@@ -36,7 +36,7 @@ pub fn write_apkg(output: impl AsRef<Path>, deck_name: &str, notes: &[NoteInput]
     for input in notes {
         let mut note = notetype.new_note();
         note.guid = input.guid.clone();
-        note.tags = vec!["markdown-to-anki".to_string()];
+        note.tags = vec!["pandoc-to-anki".to_string()];
         note.set_field(0, &input.front)
             .context("failed to set front field")?;
         note.set_field(1, &input.back)

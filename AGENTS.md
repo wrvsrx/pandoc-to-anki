@@ -71,8 +71,8 @@ cargo fmt --check
 For APKG verification:
 
 ```sh
-cargo run -- --config testdata/config-pandoc.json --output /tmp/markdown-to-anki.apkg
-python -m zipfile -l /tmp/markdown-to-anki.apkg
+cargo run -- --config testdata/config-pandoc.json --output /tmp/pandoc-to-anki.apkg
+python -m zipfile -l /tmp/pandoc-to-anki.apkg
 ```
 
 Expected package entries include `meta`, a collection file such as `collection.anki21b`, a compatibility `collection.anki2`, and `media`.

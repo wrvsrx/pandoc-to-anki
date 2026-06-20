@@ -1,4 +1,4 @@
-# markdown-to-anki
+# pandoc-to-anki
 
 Rust CLI for generating Anki packages from configured Pandoc JSON AST inputs.
 
@@ -20,7 +20,7 @@ Create a config:
 
 ```json
 {
-  "deck": "Markdown To Anki",
+  "deck": "Pandoc To Anki",
   "entries": [
     {
       "namespace": "rust-lifetimes",
