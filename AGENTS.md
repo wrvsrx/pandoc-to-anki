@@ -41,11 +41,13 @@ Generated `.apkg` files are ignored by git.
 - `src/main.rs` defines the CLI.
 - `src/config.rs` reads config JSON with a required top-level `deck` and entries with required `namespace` and `path`, plus optional `command`.
 - `src/pandoc.rs` extracts `Div` blocks with class `anki` and a non-empty id from Pandoc JSON, uses `namespace#id` as the Anki note `guid`, and renders each note's front/back HTML.
-- `src/export.rs` creates a temporary Anki collection, adds `Basic` notes, and calls `Collection::export_apkg()`.
+- `src/export.rs` creates a temporary Anki collection, declares a stable Basic-compatible note type, adds notes, and calls `Collection::export_apkg()`.
 - The project depends on official Anki Rust code through the forked submodule at `externals/anki`, currently pointing at fork tag `markdown-to-anki-26.05-buildfix`, based on Anki release tag `26.05`, using `externals/anki/rslib` as a path dependency.
 - `tokio` is included with `io-util` because Anki's crate needs that feature through Cargo feature unification.
 
-The first Pandoc-backed version intentionally uses the stock Anki `Basic` note type. Keep APKG generation separated from Pandoc parsing so the official Anki export path remains easy to test independently.
+The Pandoc-backed export path intentionally uses a Basic-compatible note type with a hard-coded Anki model id so repeated imports can match the same Anki note type. Keep APKG generation separated from Pandoc parsing so the official Anki export path remains easy to test independently.
+
+The hard-coded model id is part of the exported APKG compatibility contract. Do not change the model schema for the same id casually. In manual testing, importing two decks with the same model id but different model information, such as changed fields or CSS/template schema, triggered a fatal Anki import error. If field/template structure needs to change, use a new model id or write an explicit migration plan instead of reusing the existing id.
 
 Config rules:
 
