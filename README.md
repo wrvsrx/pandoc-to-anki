@@ -14,6 +14,18 @@ git submodule update --init --recursive
 
 `anki_proto` requires `protoc` at build time. The project dev shell provides it through `shell.nix`.
 
+Build the Nix package with submodules enabled:
+
+```sh
+nix build '.?submodules=1'
+```
+
+The packaged CLI is available at:
+
+```sh
+./result/bin/pandoc-to-anki --help
+```
+
 ## Usage
 
 Create a config:

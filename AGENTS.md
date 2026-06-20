@@ -22,6 +22,12 @@ Use:
 cargo check
 ```
 
+Build the Nix package with submodules enabled so the Anki submodule is included in the flake source:
+
+```sh
+nix build '.?submodules=1'
+```
+
 To generate an APKG from config:
 
 ```sh
@@ -66,6 +72,7 @@ Before handing off changes, run:
 ```sh
 cargo check
 cargo fmt --check
+nix build '.?submodules=1'
 ```
 
 For APKG verification:

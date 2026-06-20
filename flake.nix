@@ -18,6 +18,24 @@
         perSystem =
           { pkgs, ... }:
           {
+            packages.default = pkgs.rustPlatform.buildRustPackage {
+              pname = "pandoc-to-anki";
+              version = "0.1.0-dev";
+
+              src = ./.;
+
+              cargoLock = {
+                lockFile = ./Cargo.lock;
+                outputHashes = {
+                  "percent-encoding-iri-2.2.0" = "sha256-kCBeS1PNExyJd4jWfDfctxq6iTdAq69jtxFQgCCQ8kQ=";
+                };
+              };
+
+              nativeBuildInputs = [
+                pkgs.protobuf
+              ];
+            };
+
             devShells.default = pkgs.callPackage ./shell.nix { };
             formatter = pkgs.nixfmt;
           };
