@@ -88,11 +88,11 @@ Expected package entries include `meta`, a collection file such as `collection.a
 
 When asked to release a version, use this sequence:
 
-1. Bump `version` in `Cargo.toml` and `packages.default.version` in `flake.nix` from the current `*-dev` version to the release version, such as `0.1.0-dev` to `0.1.0`.
+1. Bump `version` in `Cargo.toml` from the current `*-dev` version to the release version, such as `0.1.0-dev` to `0.1.0`. The Nix package version is read from `Cargo.toml`.
 2. Do not edit `Cargo.lock` by hand; run a Cargo command such as `cargo check` so Cargo updates the root package version in the lockfile.
 3. Run the relevant verification commands from the section above, including `nix build '.?submodules=1'` when packaging changes are involved.
 4. Commit the release version with a message like `chore: release 0.1.0`.
 5. Create a git tag with the exact release version, such as `git tag 0.1.0`, pointing at the release commit.
-6. Bump `Cargo.toml` and `flake.nix` to the next development version, such as `0.2.0-dev`.
+6. Bump `Cargo.toml` to the next development version, such as `0.2.0-dev`.
 7. Run `cargo check` again so Cargo updates `Cargo.lock`.
 8. Commit the development-version bump with a message like `chore: bump version to 0.2.0-dev`.

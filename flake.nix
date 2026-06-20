@@ -17,10 +17,13 @@
         systems = [ "x86_64-linux" ];
         perSystem =
           { pkgs, ... }:
+          let
+            cargoToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
+          in
           {
             packages.default = pkgs.rustPlatform.buildRustPackage {
               pname = "pandoc-to-anki";
-              version = "0.1.0-dev";
+              version = cargoToml.package.version;
 
               src = ./.;
 
