@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use pandoc_ast::{Attr, Block, Format, Inline, MathType, Pandoc};
+use pandoc_ast::{Attr, Block, Caption, Cell, Format, Inline, MathType, Pandoc, Row};
 
 use crate::export::NoteInput;
 
@@ -29,12 +29,58 @@ fn collect_notes(blocks: &[Block], namespace: &str, notes: &mut Vec<NoteInput>) 
                     notes.push(note);
                 }
             }
-            Block::Div(_, children) | Block::BlockQuote(children) => {
-                collect_notes(children, namespace, notes)
-            }
-            _ => {}
+            _ => collect_nested_notes(block, namespace, notes),
         }
     }
+}
+
+fn collect_nested_notes(block: &Block, namespace: &str, notes: &mut Vec<NoteInput>) {
+    match block {
+        Block::BlockQuote(children) | Block::Figure(_, _, children) | Block::Div(_, children) => {
+            collect_notes(children, namespace, notes)
+        }
+        Block::OrderedList(_, items) | Block::BulletList(items) => {
+            for item in items {
+                collect_notes(item, namespace, notes);
+            }
+        }
+        Block::DefinitionList(items) => {
+            for (_, definitions) in items {
+                for definition in definitions {
+                    collect_notes(definition, namespace, notes);
+                }
+            }
+        }
+        Block::Table(_, caption, _, head, bodies, foot) => {
+            collect_caption_notes(caption, namespace, notes);
+            for row in &head.1 {
+                collect_row_notes(row, namespace, notes);
+            }
+            for (_, _, body_head, body_rows) in bodies {
+                for row in body_head.iter().chain(body_rows) {
+                    collect_row_notes(row, namespace, notes);
+                }
+            }
+            for row in &foot.1 {
+                collect_row_notes(row, namespace, notes);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn collect_caption_notes((_, blocks): &Caption, namespace: &str, notes: &mut Vec<NoteInput>) {
+    collect_notes(blocks, namespace, notes);
+}
+
+fn collect_row_notes((_, cells): &Row, namespace: &str, notes: &mut Vec<NoteInput>) {
+    for cell in cells {
+        collect_cell_notes(cell, namespace, notes);
+    }
+}
+
+fn collect_cell_notes((_, _, _, _, blocks): &Cell, namespace: &str, notes: &mut Vec<NoteInput>) {
+    collect_notes(blocks, namespace, notes);
 }
 
 fn note_from_anki_div(attr: &Attr, blocks: &[Block], namespace: &str) -> Option<NoteInput> {
@@ -244,5 +290,39 @@ mod tests {
 
         assert_eq!(notes.len(), 1);
         assert_eq!(notes[0].guid, "test-entry#card-2");
+    }
+
+    #[test]
+    fn extracts_anki_div_inside_list_item() {
+        let input = r#"{
+          "pandoc-api-version": [1, 23],
+          "meta": {},
+          "blocks": [
+            {
+              "t": "BulletList",
+              "c": [
+                [
+                  {
+                    "t": "Div",
+                    "c": [
+                      ["card-1", ["anki"], []],
+                      [
+                        {"t": "Para", "c": [{"t": "Str", "c": "front"}]},
+                        {"t": "Para", "c": [{"t": "Str", "c": "back"}]}
+                      ]
+                    ]
+                  }
+                ]
+              ]
+            }
+          ]
+        }"#;
+
+        let notes = notes_from_json(input, "test-entry").unwrap();
+
+        assert_eq!(notes.len(), 1);
+        assert_eq!(notes[0].guid, "test-entry#card-1");
+        assert_eq!(notes[0].front, "<p>front</p>");
+        assert_eq!(notes[0].back, "<p>back</p>");
     }
 }
