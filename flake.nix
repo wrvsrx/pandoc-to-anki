@@ -36,7 +36,6 @@
               ];
             };
 
-            devShells.default = pkgs.callPackage ./shell.nix { };
             formatter = pkgs.nixfmt;
           };
       }
