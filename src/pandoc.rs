@@ -5,39 +5,41 @@ use crate::export::NoteInput;
 
 const ANKI_CLASS: &str = "anki";
 
-pub fn notes_from_json(input: &str) -> Result<Vec<NoteInput>> {
+pub fn notes_from_json(input: &str, namespace: &str) -> Result<Vec<NoteInput>> {
     let document: Pandoc =
         serde_json::from_str(input).context("failed to parse Pandoc JSON AST")?;
-    let notes = notes_from_blocks(&document.blocks);
+    let notes = notes_from_blocks(&document.blocks, namespace);
     if notes.is_empty() {
-        return Err(anyhow!("no ::: anki fenced div blocks found"));
+        return Err(anyhow!("no identified ::: anki fenced div blocks found"));
     }
     Ok(notes)
 }
 
-fn notes_from_blocks(blocks: &[Block]) -> Vec<NoteInput> {
+fn notes_from_blocks(blocks: &[Block], namespace: &str) -> Vec<NoteInput> {
     let mut notes = Vec::new();
-    collect_notes(blocks, &mut notes);
+    collect_notes(blocks, namespace, &mut notes);
     notes
 }
 
-fn collect_notes(blocks: &[Block], notes: &mut Vec<NoteInput>) {
+fn collect_notes(blocks: &[Block], namespace: &str, notes: &mut Vec<NoteInput>) {
     for block in blocks {
         match block {
             Block::Div(attr, children) if has_class(attr, ANKI_CLASS) => {
-                if let Some(note) = note_from_anki_div(attr, children) {
+                if let Some(note) = note_from_anki_div(attr, children, namespace) {
                     notes.push(note);
                 }
             }
-            Block::Div(_, children) | Block::BlockQuote(children) => collect_notes(children, notes),
+            Block::Div(_, children) | Block::BlockQuote(children) => {
+                collect_notes(children, namespace, notes)
+            }
             _ => {}
         }
     }
 }
 
-fn note_from_anki_div(attr: &Attr, blocks: &[Block]) -> Option<NoteInput> {
+fn note_from_anki_div(attr: &Attr, blocks: &[Block], namespace: &str) -> Option<NoteInput> {
     let (front, back) = blocks.split_first()?;
-    let guid = note_guid(attr)?;
+    let guid = note_guid(attr, namespace)?;
     Some(NoteInput {
         guid,
         front: render_block(front),
@@ -49,8 +51,8 @@ fn has_class((_, classes, _): &Attr, class: &str) -> bool {
     classes.iter().any(|candidate| candidate == class)
 }
 
-fn note_guid((id, _, _): &Attr) -> Option<String> {
-    (!id.is_empty()).then(|| id.clone())
+fn note_guid((id, _, _): &Attr, namespace: &str) -> Option<String> {
+    (!id.is_empty()).then(|| format!("{namespace}#{id}"))
 }
 
 fn render_blocks(blocks: &[Block]) -> String {
@@ -198,10 +200,10 @@ mod tests {
           ]
         }"#;
 
-        let notes = notes_from_json(input).unwrap();
+        let notes = notes_from_json(input, "test-entry").unwrap();
 
         assert_eq!(notes.len(), 1);
-        assert_eq!(notes[0].guid, "card-1");
+        assert_eq!(notes[0].guid, "test-entry#card-1");
         assert_eq!(notes[0].front, "<p>first block</p>");
         assert_eq!(
             notes[0].back,
@@ -238,9 +240,9 @@ mod tests {
           ]
         }"#;
 
-        let notes = notes_from_json(input).unwrap();
+        let notes = notes_from_json(input, "test-entry").unwrap();
 
         assert_eq!(notes.len(), 1);
-        assert_eq!(notes[0].guid, "card-2");
+        assert_eq!(notes[0].guid, "test-entry#card-2");
     }
 }

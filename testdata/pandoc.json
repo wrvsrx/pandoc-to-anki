@@ -1,0 +1,41 @@
+{
+  "pandoc-api-version": [
+    1,
+    23
+  ],
+  "meta": {},
+  "blocks": [
+    {
+      "t": "Div",
+      "c": [
+        [
+          "card-1",
+          [
+            "anki"
+          ],
+          []
+        ],
+        [
+          {
+            "t": "Para",
+            "c": [
+              {
+                "t": "Str",
+                "c": "front"
+              }
+            ]
+          },
+          {
+            "t": "Para",
+            "c": [
+              {
+                "t": "Str",
+                "c": "back"
+              }
+            ]
+          }
+        ]
+      ]
+    }
+  ]
+}

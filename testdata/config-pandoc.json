@@ -1,0 +1,9 @@
+{
+  "deck": "Markdown To Anki Test",
+  "entries": [
+    {
+      "namespace": "test-entry",
+      "path": "pandoc.json"
+    }
+  ]
+}
