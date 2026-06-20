@@ -10,6 +10,12 @@ The current milestone is a minimal proof that the project can create an `.apkg` 
 
 The official Anki Rust dependency builds protobuf code and requires `protoc`.
 
+Initialize the forked Anki submodule first:
+
+```sh
+git submodule update --init --recursive
+```
+
 Use:
 
 ```sh
@@ -28,7 +34,7 @@ Generated `.apkg` files are ignored by git.
 
 - `src/main.rs` defines the CLI.
 - `src/export.rs` creates a temporary Anki collection, adds a fixed `Basic` note, and calls `Collection::export_apkg()`.
-- The project depends on official `ankitects/anki` Rust code pinned by git revision in `Cargo.toml`.
+- The project depends on official Anki Rust code through the forked submodule at `externals/anki`, currently based on release tag `26.05`, using `externals/anki/rslib` as a path dependency.
 - `tokio` is included with `io-util` because Anki's crate needs that feature through Cargo feature unification.
 
 The first version intentionally uses the stock Anki `Basic` note type. Do not add JSON or Markdown input handling to this milestone unless requested.

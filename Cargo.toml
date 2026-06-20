@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-anki = { git = "https://github.com/ankitects/anki.git", rev = "29a2853f1d14f51569cdd0b03d5e2f13c88c7b8f", package = "anki" }
+anki = { path = "externals/anki/rslib", package = "anki" }
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 tempfile = "3.10"

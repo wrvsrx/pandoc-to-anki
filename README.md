@@ -4,7 +4,15 @@ Experimental Rust rewrite for generating Anki packages from Markdown-derived dat
 
 The first milestone only verifies that this project can create an `.apkg` through Anki's official Rust collection exporter.
 
+The Anki Rust dependency is vendored as a git submodule at `externals/anki`, currently based on Anki release tag `26.05`, so local build-script patches can be carried against the fork at `https://github.com/wrvsrx/anki.git`.
+
 ## Demo
+
+Initialize submodules before building:
+
+```sh
+git submodule update --init --recursive
+```
 
 `anki_proto` requires `protoc` at build time. With Nix:
 
