@@ -8,7 +8,7 @@ The current milestone reads a Pandoc JSON AST, extracts supported `::: anki` fen
 
 ## Build Requirements
 
-The official Anki Rust dependency builds protobuf code and requires `protoc`.
+The official Anki Rust dependency builds protobuf code and requires `protoc`; the project dev shell provides it through `shell.nix`.
 
 Initialize the forked Anki submodule first:
 
@@ -19,19 +19,19 @@ git submodule update --init --recursive
 Use:
 
 ```sh
-nix shell nixpkgs#protobuf -c cargo check
+cargo check
 ```
 
 To run the demo exporter:
 
 ```sh
-nix shell nixpkgs#protobuf -c cargo run -- demo --output /tmp/markdown-to-anki-demo.apkg
+cargo run -- demo --output /tmp/markdown-to-anki-demo.apkg
 ```
 
 To generate an APKG from Pandoc JSON:
 
 ```sh
-pandoc -f markdown -t json notes.md | nix shell nixpkgs#protobuf -c cargo run -- apkg --output /tmp/notes.apkg
+pandoc -f markdown -t json notes.md | cargo run -- apkg --output /tmp/notes.apkg
 ```
 
 Generated `.apkg` files are ignored by git.
@@ -59,14 +59,14 @@ Planned next steps:
 Before handing off changes, run:
 
 ```sh
-nix shell nixpkgs#protobuf -c cargo check
+cargo check
 cargo fmt --check
 ```
 
 For APKG verification:
 
 ```sh
-nix shell nixpkgs#protobuf -c cargo run -- demo --output /tmp/markdown-to-anki-demo.apkg
+cargo run -- demo --output /tmp/markdown-to-anki-demo.apkg
 python -m zipfile -l /tmp/markdown-to-anki-demo.apkg
 ```
 

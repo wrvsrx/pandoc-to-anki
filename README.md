@@ -12,20 +12,20 @@ Initialize submodules before building:
 git submodule update --init --recursive
 ```
 
-`anki_proto` requires `protoc` at build time.
+`anki_proto` requires `protoc` at build time. The project dev shell provides it through `shell.nix`.
 
 ## Usage
 
 Convert Markdown to Pandoc JSON and generate an APKG:
 
 ```sh
-pandoc -f markdown -t json notes.md | nix shell nixpkgs#protobuf -c cargo run -- apkg --output notes.apkg
+pandoc -f markdown -t json notes.md | cargo run -- apkg --output notes.apkg
 ```
 
 Or read the AST from a file:
 
 ```sh
-nix shell nixpkgs#protobuf -c cargo run -- apkg --input notes.json --output notes.apkg
+cargo run -- apkg --input notes.json --output notes.apkg
 ```
 
 An input block like:
@@ -47,7 +47,7 @@ creates one note where the first Pandoc block is the front, and the remaining bl
 To run the fixed demo exporter:
 
 ```sh
-nix shell nixpkgs#protobuf -c cargo run -- demo --output demo.apkg
+cargo run -- demo --output demo.apkg
 ```
 
 This creates a fixed demo deck named `Markdown To Anki Demo`.
