@@ -41,11 +41,12 @@ Generated `.apkg` files are ignored by git.
 - `src/main.rs` defines the CLI.
 - `src/config.rs` reads config JSON with a required top-level `deck` and entries with required `namespace` and `path`, plus optional `command`.
 - `src/pandoc.rs` extracts `Div` blocks with class `anki` and a non-empty id from Pandoc JSON, uses `namespace#id` as the Anki note `guid`, and renders each note's front/back HTML.
-- `src/export.rs` creates a temporary Anki collection, declares a stable Basic-compatible note type, adds notes, and calls `Collection::export_apkg()`.
+- `src/export.rs` creates a temporary Anki collection, loads the stable Basic-compatible note type from `models/basic-v1.json`, adds notes, and calls `Collection::export_apkg()`.
+- `models/basic-v1.json` is the checked-in Anki model schema for the current two-field renderer.
 - The project depends on official Anki Rust code through the forked submodule at `externals/anki`, currently pointing at fork tag `markdown-to-anki-26.05-buildfix`, based on Anki release tag `26.05`, using `externals/anki/rslib` as a path dependency.
 - `tokio` is included with `io-util` because Anki's crate needs that feature through Cargo feature unification.
 
-The Pandoc-backed export path intentionally uses a Basic-compatible note type with a hard-coded Anki model id so repeated imports can match the same Anki note type. Keep APKG generation separated from Pandoc parsing so the official Anki export path remains easy to test independently.
+The Pandoc-backed export path intentionally uses a Basic-compatible note type with a checked-in, hard-coded Anki model id so repeated imports can match the same Anki note type. Keep APKG generation separated from Pandoc parsing so the official Anki export path remains easy to test independently.
 
 The hard-coded model id is part of the exported APKG compatibility contract. Do not change the model schema for the same id casually. In manual testing, importing two decks with the same model id but different model information, such as changed fields or CSS/template schema, triggered a fatal Anki import error. Field additions/removals in particular can panic in Anki 25.09.4's `rslib/src/notetype/merge.rs` while merging note types: `self.fields.swap(i, index)` can receive `index == len`, producing `index out of bounds: the len is 4 but the index is 4`, which propagates as a `pyo3_runtime.PanicException` from `import_anki_package_raw`. If field/template structure needs to change, use a new model id or write an explicit migration plan instead of reusing the existing id.
 
