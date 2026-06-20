@@ -20,7 +20,7 @@
           let
             cargoToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
           in
-          {
+          rec {
             packages.default = pkgs.rustPlatform.buildRustPackage {
               pname = "pandoc-to-anki";
               version = cargoToml.package.version;
@@ -37,6 +37,11 @@
               nativeBuildInputs = [
                 pkgs.protobuf
               ];
+            };
+
+            devShells.default = pkgs.mkShell {
+              inputsFrom = [ packages.default ];
+              nativeBuildInputs = [ pkgs.rustfmt ];
             };
           };
       }
