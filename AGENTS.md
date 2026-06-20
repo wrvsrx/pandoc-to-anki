@@ -47,7 +47,7 @@ Config rules:
 2. Each entry must define `namespace` and `path`.
 3. Relative paths are resolved from the config file's directory.
 4. If `command` is omitted, `path` is read directly as Pandoc JSON.
-5. If `command` is present, it is run with `sh -c` from the config file's directory and must print Pandoc JSON to stdout.
+5. If `command` is present, the file at `path` is sent to the command's stdin; it is run with `sh -c` from the config file's directory and must print Pandoc JSON to stdout.
 6. Anki note `guid` is `namespace#block_id`; duplicate GUIDs are errors.
 7. `anki` blocks without ids are skipped.
 

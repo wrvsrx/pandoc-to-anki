@@ -25,7 +25,7 @@ Create a config:
     {
       "namespace": "rust-lifetimes",
       "path": "notes/rust/lifetimes.md",
-      "command": "pandoc -f markdown -t json notes/rust/lifetimes.md"
+      "command": "pandoc -f markdown -t json"
     }
   ]
 }
@@ -38,7 +38,8 @@ cargo run -- --config config.json --output notes.apkg
 ```
 
 If `command` is omitted, `path` is read directly as a Pandoc JSON AST file.
-Relative paths are resolved from the config file's directory. Commands are also run from the config file's directory and must print Pandoc JSON to stdout.
+If `command` is present, the file at `path` is sent to the command's stdin, and the command must print Pandoc JSON to stdout.
+Relative paths are resolved from the config file's directory. Commands are also run from the config file's directory.
 
 An input block like:
 

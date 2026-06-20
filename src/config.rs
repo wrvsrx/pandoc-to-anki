@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 
 use anyhow::{anyhow, bail, Context, Result};
 use serde::Deserialize;
@@ -81,24 +82,38 @@ impl Entry {
     }
 
     fn load_pandoc_ast(&self, base_dir: &Path) -> Result<String> {
+        let path = base_dir.join(&self.path);
+        let contents = fs::read_to_string(&path)
+            .with_context(|| format!("failed to read {}", path.display()))?;
+
         match &self.command {
-            Some(command) => run_command(command, base_dir),
-            None => {
-                let path = base_dir.join(&self.path);
-                fs::read_to_string(&path)
-                    .with_context(|| format!("failed to read {}", path.display()))
-            }
+            Some(command) => run_command(command, base_dir, &contents),
+            None => Ok(contents),
         }
     }
 }
 
-fn run_command(command: &str, base_dir: &Path) -> Result<String> {
-    let output = Command::new("sh")
+fn run_command(command: &str, base_dir: &Path, stdin: &str) -> Result<String> {
+    let mut child = Command::new("sh")
         .arg("-c")
         .arg(command)
         .current_dir(base_dir)
-        .output()
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
         .with_context(|| format!("failed to run command `{command}`"))?;
+
+    child
+        .stdin
+        .as_mut()
+        .context("failed to open command stdin")?
+        .write_all(stdin.as_bytes())
+        .with_context(|| format!("failed to write stdin for command `{command}`"))?;
+
+    let output = child
+        .wait_with_output()
+        .with_context(|| format!("failed to wait for command `{command}`"))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -140,6 +155,27 @@ mod tests {
                 namespace: "entry".to_string(),
                 path: PathBuf::from("notes.json"),
                 command: None,
+            }],
+            base_dir: dir.path().to_path_buf(),
+        };
+
+        let notes = config.load_notes().unwrap();
+
+        assert_eq!(notes.len(), 1);
+        assert_eq!(notes[0].guid, "entry#card-1");
+    }
+
+    #[test]
+    fn pipes_entry_file_to_command_stdin() {
+        let dir = tempdir().unwrap();
+        let ast_path = dir.path().join("notes.json");
+        fs::write(&ast_path, pandoc_json("card-1")).unwrap();
+        let config = Config {
+            deck: "Deck".to_string(),
+            entries: vec![Entry {
+                namespace: "entry".to_string(),
+                path: PathBuf::from("notes.json"),
+                command: Some("cat".to_string()),
             }],
             base_dir: dir.path().to_path_buf(),
         };
